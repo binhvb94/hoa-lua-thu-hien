@@ -20,3 +20,9 @@ html,body{overflow-x:clip}
 .benefit-strip[hidden],.categories-section[hidden],.editorial-section[hidden],.register-section[hidden],.contact-section[hidden]{display:none!important}
 
 .desktop-nav a[hidden],.mobile-menu a[hidden],.hero-actions a[hidden],.footer-col a[hidden]{display:none!important}
+
+/* CMS V1.3.1 – cỡ chữ riêng từng thiết bị; tránh ngắt cụm nhấn mạnh ở giữa */
+.hero h1{font-size:clamp(38px,4.6vw,var(--cms-hero-heading-desktop,56px));}
+.hero h1 em{white-space:nowrap;display:inline-block;}
+@media(max-width:760px){.hero h1{font-size:var(--cms-hero-heading-mobile,38px);}}
+@media(max-width:370px){.hero h1{font-size:min(var(--cms-hero-heading-mobile,38px),36px);}}
