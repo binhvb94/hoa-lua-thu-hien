@@ -14,3 +14,9 @@ html,body{overflow-x:clip}
 .preview-banner {background:#6c4154;color:#fff8f6;text-align:center;padding:9px 14px;font:600 11px/1.5 "DM Sans",sans-serif;letter-spacing:.25px}
 .preview-banner strong{letter-spacing:1.25px;margin-right:6px}
 @media(max-width:560px){.preview-banner{font-size:10px;padding:9px 12px}}
+
+#cms-preview-banner{position:sticky;top:0;z-index:99999;background:#563246;color:#fff;padding:12px 20px;text-align:center;font:700 12px/1.5 'DM Sans',sans-serif;letter-spacing:.6px;box-shadow:0 4px 16px #2a182030}
+
+.benefit-strip[hidden],.categories-section[hidden],.editorial-section[hidden],.register-section[hidden],.contact-section[hidden]{display:none!important}
+
+.desktop-nav a[hidden],.mobile-menu a[hidden],.hero-actions a[hidden],.footer-col a[hidden]{display:none!important}

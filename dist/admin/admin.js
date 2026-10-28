@@ -1,3 +1,4 @@
+import {initCms,openCms,hasCmsChanges} from './site-cms.js';
 const $ = s => document.querySelector(s);
 const apiBase='/api/admin';
 const categoryNames={'hoa-lua':'Hoa lụa','hoa-cao-su':'Hoa cao su','hoa-decor':'Hoa giả decor'};
@@ -73,6 +74,15 @@ async function removeProduct(id){const p=allProducts.find(x=>x.id===id);if(!p||!
  try{await call('/products/'+encodeURIComponent(id),{method:'DELETE'});await loadProducts();notify('Đã xóa sản phẩm khỏi danh mục.')}catch(err){notify(err.message,true)}
 }
 function wire(){
+ initCms({call,toast:notify});
+ const showView=async (view)=>{
+  if(view==='products' && hasCmsChanges() && !confirm('Có chỉnh sửa chưa lưu. Rời trang nội dung?'))return;
+  const cms=view==='cms';document.querySelector('#cms-work').hidden=!cms;document.querySelector('#san-pham').hidden=cms;document.querySelector('#product-stats').hidden=cms;document.querySelector('#admin-heading').textContent=cms?'Nội dung website':'Danh sách sản phẩm';
+  document.querySelector('a[href="#san-pham"]').classList.toggle('active',!cms);document.querySelector('#nav-cms').classList.toggle('active',cms);
+  if(cms)await openCms();
+ };
+ document.querySelector('#nav-cms').addEventListener('click',(e)=>{e.preventDefault();showView('cms')});
+ document.querySelector('a[href="#san-pham"]').addEventListener('click',(e)=>{e.preventDefault();showView('products')});
  $('#year').textContent=String(new Date().getFullYear());$('#login-form').addEventListener('submit',login);
  $('#logout-top').addEventListener('click',logout);$('#logout-side').addEventListener('click',logout);
  $('#search').addEventListener('input',render);$('#status-filter').addEventListener('change',render);

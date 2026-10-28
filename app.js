@@ -1,7 +1,9 @@
 import { products as sampleProducts, categoryNames } from './data/products.js';
+import {loadSiteContent, CMS_PREVIEW} from './site-frontend.js';
 let products = [];
 
 const cfg = window.SITE_CONFIG || {};
+if (CMS_PREVIEW) cfg.previewMode = true;
 const $ = (selector, parent = document) => parent.querySelector(selector);
 const $$ = (selector, parent = document) => Array.from(parent.querySelectorAll(selector));
 const money = (num) => new Intl.NumberFormat('vi-VN', { style:'currency', currency:'VND', maximumFractionDigits:0 }).format(num);
@@ -32,6 +34,7 @@ const cartTotal = () => cartItems().reduce((n, item) => n + item.product.price *
 const pixelReady = () => pixelInitialized && typeof window.fbq === 'function';
 
 function loadPixel() {
+  if(CMS_PREVIEW) return;
   const id = String(cfg.pixelId || '').trim();
   if (pixelInitialized || !/^\d{8,20}$/.test(id)) return;
   // Tải script Meta Pixel chỉ SAU khi khách đồng ý cookie.
@@ -40,6 +43,7 @@ function loadPixel() {
   pixelInitialized = true;
 }
 function track(eventName, payload = {}, opts = {}) {
+  if(CMS_PREVIEW) return;
   if (!pixelReady() || localStorage.getItem(consentKey) !== 'yes') return;
   try { window.fbq('track', eventName, payload, opts); } catch (err) { console.warn('Meta Pixel:',err); }
 }
@@ -66,6 +70,7 @@ function setConsent(value) {
   }
 }
 function setupConsent() {
+  if(CMS_PREVIEW) { $('#cookie-banner').hidden=true; return; }
   if (currentConsent() === 'yes') { loadPixel(); track('PageView'); }
   else if (!currentConsent()) $('#cookie-banner').hidden = false;
   $('#cookie-accept').addEventListener('click', () => setConsent('yes'));
@@ -289,6 +294,7 @@ async function loadCatalog(){
   renderProducts();renderCart();
 }
 async function init(){
+  try{await loadSiteContent()}catch{return;}
   $('#copyright-year').textContent=String(new Date().getFullYear());
   if (cfg.previewMode) {
     $('#preview-banner').hidden=false;

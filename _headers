@@ -8,3 +8,10 @@
   Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow, noarchive
   Referrer-Policy: no-referrer
+
+/api/site
+  Cache-Control: no-store
+
+/api/admin/site/*
+  Cache-Control: private, no-store
+
