@@ -1,3 +1,5 @@
+import {checkCmsIntegrity} from './check-integrity.mjs';
+await checkCmsIntegrity();
 import { cp, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 const root = process.cwd();

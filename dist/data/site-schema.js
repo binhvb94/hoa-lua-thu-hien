@@ -8,8 +8,10 @@ export const SECTIONS = {
     primaryColor:{label:'Màu chủ đạo',kind:'color'},
   }},
   navigation:{label:'Menu điều hướng',description:'Đổi tên 4 mục menu, giữ nguyên điểm đến và chức năng.',fields:{home:{label:'Menu Trang chủ',max:40},products:{label:'Menu Sản phẩm',max:40},story:{label:'Menu Giới thiệu',max:40},contact:{label:'Menu Liên hệ',max:40}}},
-  hero: {label:'Banner trang chủ',description:'Ảnh lớn, tiêu đề, mô tả và nút kêu gọi.',fields:{
+  hero: {label:'Banner trang chủ',description:'Ảnh lớn, tiêu đề, mô tả, cỡ chữ riêng cho máy tính/điện thoại và nút kêu gọi.',fields:{
     eyebrow:{label:'Dòng chữ nhỏ phía trên',max:90},titleStart:{label:'Tiêu đề – phần đầu',max:110},titleEm:{label:'Tiêu đề – phần in nghiêng',max:90},titleEnd:{label:'Tiêu đề – phần cuối',max:110},
+    fontSizeDesktop:{label:'Cỡ chữ tối đa – máy tính (px)',kind:'number',max:3,minValue:40,maxValue:80},
+    fontSizeMobile:{label:'Cỡ chữ tiêu đề – điện thoại (px)',kind:'number',max:3,minValue:30,maxValue:56},
     description:{label:'Mô tả banner',kind:'textarea',max:500}, image:{label:'Ảnh banner chính',kind:'image',max:900},imageAlt:{label:'Mô tả ảnh (SEO)',max:160},
     primaryLabel:{label:'Nút chính',max:70}, secondaryLabel:{label:'Nút phụ',max:70}, badge:{label:'Nhãn nhỏ trên ảnh',max:80},
   }},
@@ -47,7 +49,7 @@ export const SECTIONS = {
 export const DEFAULT_SITE = {
   branding:{logo:'/assets/logo.svg',name:'Hoa Lụa',accent:'Thu Hiền',tagline:'VẺ ĐẸP THEO NĂM THÁNG',announcement:'Một nhành hoa nhỏ, một góc nhà xinh',announcementLink:'Khám phá bộ sưu tập',primaryColor:'#8d4157'},
   navigation:{home:'Trang chủ',products:'Sản phẩm',story:'Về chúng tôi',contact:'Liên hệ'},
-  hero:{eyebrow:'HOA LỤA THU HIỀN',titleStart:'Gửi một chút',titleEm:'dịu dàng',titleEnd:'vào không gian sống.',description:'Những nhành hoa bền đẹp theo thời gian, mang sự tinh tế và cảm hứng đến từng góc nhà thân thương.',image:'https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1250&q=88',imageAlt:'Những nhành hoa tông hồng nhẹ nhàng',primaryLabel:'Khám phá sản phẩm',secondaryLabel:'Câu chuyện Thu Hiền',badge:'ĐẸP TỪ NHỮNG ĐIỀU BÌNH DỊ'},
+  hero:{eyebrow:'HOA LỤA THU HIỀN',titleStart:'Gửi một chút',titleEm:'dịu dàng',titleEnd:'vào không gian sống.',fontSizeDesktop:'56',fontSizeMobile:'38',description:'Những nhành hoa bền đẹp theo thời gian, mang sự tinh tế và cảm hứng đến từng góc nhà thân thương.',image:'https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1250&q=88',imageAlt:'Những nhành hoa tông hồng nhẹ nhàng',primaryLabel:'Khám phá sản phẩm',secondaryLabel:'Câu chuyện Thu Hiền',badge:'ĐẸP TỪ NHỮNG ĐIỀU BÌNH DỊ'},
   benefits:{title1:'Vẻ đẹp bền lâu',desc1:'Không lo hoa tàn theo mùa',title2:'Đa dạng phong cách',desc2:'Từ nhẹ nhàng đến sang trọng',title3:'Tư vấn tận tâm',desc3:'Chọn hoa hợp với không gian',title4:'Mua hàng thuận tiện',desc4:'Đặt hàng trực tiếp trên website'},
   categories:{heading:'Mỗi loài hoa,',emphasis:'một nét riêng',description:'Một chút ngọt ngào cho những ngày bình thường.',image1:'https://images.unsplash.com/photo-1526045478516-99145907023c?auto=format&fit=crop&w=850&q=80',image2:'https://images.unsplash.com/photo-1487530811176-3780de880c2d?auto=format&fit=crop&w=850&q=80',image3:'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=850&q=80'},
   collection:{eyebrow:'THE FLOWER EDIT',heading:'Góc hoa',emphasis:'Thu Hiền',description:'Khám phá những mẫu hoa được chọn lọc theo cảm hứng.'},

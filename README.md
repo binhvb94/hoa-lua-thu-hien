@@ -1,17 +1,17 @@
-# HOA LỤA THU HIỀN V1.3 – CMS: LƯU NHÁP / XEM TRƯỚC / XUẤT BẢN
+# HOA LỤA THU HIỀN V1.3.2 — BẢN ĐẦY ĐỦ, KHÔI PHỤC CMS
 
-Nâng cấp trực tiếp từ website V1.2.1 đang vận hành trên Cloudflare Pages.
+Đây là bộ mã nguồn **đầy đủ** gồm website khách hàng + ADMIN sản phẩm + ADMIN nội dung website + bản nháp/xem trước/xuất bản + điều chỉnh font banner theo thiết bị.
 
-**Xem file `HUONG_DAN_CAP_NHAT_V1_3.md` để cập nhật an toàn.**
+**Xem chi tiết:** `HUONG_DAN_KHOI_PHUC_CMS_V1_3_2.md`.
 
-Điểm mới: mục **Nội dung website** trong `/admin/`, chỉnh nội dung theo nhóm; `Lưu bản nháp`, `Xem trước` riêng cho ADMIN, `Xuất bản website` và `Hủy bản nháp`. Cơ chế bản nháp chỉ áp dụng nội dung giao diện; **sản phẩm vẫn được áp dụng ngay khi lưu**, như V1.2.
+## Lệnh kiểm tra
 
-Cần chạy `migrations/0003_site_cms.sql` trên D1 **TRƯỚC KHI** upload mã nguồn mới. Không tạo Cloudflare Account, Pages Project, D1, R2 hoặc Secret mới. Tất cả tính năng đặt hàng, giỏ hàng và Pixel giữ cơ chế cũ.
+```bash
+npm run test
+npm run check:cms
+npm run build
+```
 
-- API public: `/api/site` chỉ trả dữ liệu đã xuất bản.
-- API ADMIN: `/api/admin/site`, `/api/admin/site/draft`, `/api/admin/site/preview`, `/api/admin/site/publish`, `/api/admin/site/discard`.
-- Bản xem trước: `/?cms_preview=1` (cần đăng nhập cùng tên miền).
-- DB: `site_cms` + `site_publication_history`.
-- Thử nghiệm: `node --test tests/site-cms.test.mjs`; build: `npm run build`.
+Cloudflare Pages cấu hình: Framework None, build `npm run build`, output `dist`, nhánh `main`. Giữ nguyên D1 `DB`, R2 `PRODUCT_IMAGES` và Secret `ADMIN_PASSWORD_HASH` đang có.
 
-Lưu ý: Bộ mã nguồn này chưa được tự động upload lên GitHub hoặc Cloudflare của bạn. Phải chạy migration và commit để đưa lên hệ thống đang chạy.
+**Không chạy lại migration để phục hồi menu bị mất.** Khôi phục menu là việc của mã nguồn và deployment. Dữ liệu nội dung/bản nháp đã lưu trong D1 không thay đổi.

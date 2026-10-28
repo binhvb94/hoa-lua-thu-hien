@@ -30,7 +30,8 @@ function fieldNode(key,meta,value){
  input.dataset.cmsKey=key;input.maxLength=meta.max||2000;input.value=value??'';
  if(meta.kind==='select'){for(const [val,text] of [['yes','Hiển thị'],['no','Tạm ẩn']]){const opt=document.createElement('option');opt.value=val;opt.textContent=text;input.append(opt)}input.value=value??'yes'}
  else if(multiline)input.rows=4;
- else input.type=meta.kind==='color'?'color':meta.kind==='phone'?'tel':meta.kind==='url'?'url':'text';
+ else input.type=meta.kind==='number'?'number':meta.kind==='color'?'color':meta.kind==='phone'?'tel':meta.kind==='url'?'url':'text';
+ if(meta.kind==='number'){input.min=String(meta.minValue);input.max=String(meta.maxValue);input.step='1';input.inputMode='numeric';}
  if(meta.kind==='color'&&!/^#[\da-f]{6}$/i.test(input.value))input.value='#8d4157';
  if(meta.kind==='image'){
    input.type='text';input.placeholder='https://... hoặc /media/...';

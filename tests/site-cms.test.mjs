@@ -55,6 +55,9 @@ test('CMS: public sees published only; draft stays authenticated; publish atomic
 });
 test('CMS validation denies HTML fields outside schema / unsafe URLs and missing CSRF',async()=>{
  assert.throws(()=>cleanSection('hero',{...DEFAULT_SITE.hero,image:'javascript:alert(1)'}));
+ assert.throws(()=>cleanSection('hero',{...DEFAULT_SITE.hero,fontSizeDesktop:'999'}));
+ assert.throws(()=>cleanSection('hero',{...DEFAULT_SITE.hero,fontSizeMobile:'12px'}));
+ assert.equal(cleanSection('hero',{...DEFAULT_SITE.hero,fontSizeDesktop:'50',fontSizeMobile:'34'}).fontSizeDesktop,'50');
  assert.throws(()=>cleanSection('hero',{...DEFAULT_SITE.hero,unknown:'<script>'}));
  assert.throws(()=>cleanSection('visibility',{...DEFAULT_SITE.visibility,story:'bad-value'}));
  const state=fakeDB(),env={DB:state.db};

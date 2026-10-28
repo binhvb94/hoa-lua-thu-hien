@@ -30,6 +30,10 @@ export function renderSite(site){
  setText('.announcement', '');
  const announce=$('.announcement');if(announce){announce.replaceChildren();const decoration=document.createElement('span');decoration.textContent='✦';announce.append(decoration,document.createTextNode(' '+b.announcement+' '));const d2=document.createElement('span');d2.textContent='✦';announce.append(d2);const link=document.createElement('a');link.href='#bo-suu-tap';link.textContent=b.announcementLink+' ↗';announce.append(link)}
  setText('.hero .eyebrow',h.eyebrow+' ✳');emphasis('.hero h1',h.titleStart,h.titleEm,h.titleEnd);
+ // CMS: chỉ nhận số nguyên trong phạm vi cho phép, tuyệt đối không nối chuỗi CSS tùy ý.
+ const titleDesktop=Number(h.fontSizeDesktop),titleMobile=Number(h.fontSizeMobile);
+ if(Number.isInteger(titleDesktop)&&titleDesktop>=40&&titleDesktop<=80)document.documentElement.style.setProperty('--cms-hero-heading-desktop',titleDesktop+'px');
+ if(Number.isInteger(titleMobile)&&titleMobile>=30&&titleMobile<=56)document.documentElement.style.setProperty('--cms-hero-heading-mobile',titleMobile+'px');
  setText('.hero-desc',h.description);setPhoto('.hero-image',h.image,h.imageAlt);
  const heroActions=$$('.hero-actions a');if(heroActions[0])heroActions[0].textContent=h.primaryLabel+' ↗';if(heroActions[1])heroActions[1].textContent=h.secondaryLabel+' →';
  setText('.hero-label span:last-child',h.badge);
