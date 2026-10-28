@@ -1,4 +1,5 @@
-import { products, categoryNames } from './data/products.js';
+import { products as sampleProducts, categoryNames } from './data/products.js';
+let products = [];
 
 const cfg = window.SITE_CONFIG || {};
 const $ = (selector, parent = document) => parent.querySelector(selector);
@@ -21,7 +22,7 @@ function readCart() {
     const value = JSON.parse(localStorage.getItem(storeKey) || '{}');
     if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
     const output = {};
-    for (const [id, amount] of Object.entries(value)) if (productById(id) && Number.isInteger(amount) && amount > 0) output[id] = Math.min(amount, 20);
+    for (const [id, amount] of Object.entries(value)) if (Number.isInteger(amount) && amount > 0) output[id] = Math.min(amount, 20);
     return output;
   } catch { return {}; }
 }
@@ -81,7 +82,7 @@ function renderProducts() {
   $('#result-count').textContent = `${listing.length} sản phẩm`;
   $('#empty-products').hidden = listing.length > 0;
   $('#product-grid').innerHTML = listing.map(p => `<article class="product-card">
-    <div class="product-img-wrap tone-${p.tone}" data-view="${p.id}" role="button" tabindex="0" aria-label="Xem ${safeText(p.name)}"><img src="${p.image}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.03'" />${p.badge ? `<span class="product-tag">${safeText(p.badge)}</span>` : ''}
+    <div class="product-img-wrap tone-${p.tone}" data-view="${p.id}" role="button" tabindex="0" aria-label="Xem ${safeText(p.name)}"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.03'" />${p.badge ? `<span class="product-tag">${safeText(p.badge)}</span>` : ''}
       <div class="product-card-actions"><button class="quick-view" data-view="${p.id}" type="button">Xem chi tiết</button><button class="quick-add" data-add="${p.id}" type="button">+ Thêm giỏ</button></div></div>
     <div class="product-info"><span class="product-category">${categoryNames[p.category]}</span><button class="product-name" data-view="${p.id}" type="button">${safeText(p.name)}</button><div class="product-price">${money(p.price)} ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>`:''}</div></div>
   </article>`).join('');
@@ -98,7 +99,7 @@ function renderCart() {
   $('#cart-count-title').textContent = `(${count})`;
   $('#cart-subtotal').textContent = money(cartTotal());
   $('#checkout-button').disabled = !count;
-  $('#cart-lines').innerHTML = count ? cartItems().map(({product:p,quantity})=>`<div class="cart-line"><img src="${p.image}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.05'"><div><h4>${safeText(p.name)}</h4><strong>${money(p.price)}</strong><div class="qty-control"><button data-qty="${p.id}" data-change="-1" aria-label="Giảm số lượng ${safeText(p.name)}">−</button><span>${quantity}</span><button data-qty="${p.id}" data-change="1" aria-label="Tăng số lượng ${safeText(p.name)}">+</button></div></div><button class="remove-item" data-remove="${p.id}" aria-label="Xóa ${safeText(p.name)}">×</button></div>`).join(''):'<div class="cart-empty"><span>✿</span><strong>Giỏ hoa còn trống</strong><p>Thêm vài nhành hoa xinh vào giỏ nhé!</p></div>';
+  $('#cart-lines').innerHTML = count ? cartItems().map(({product:p,quantity})=>`<div class="cart-line"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.05'"><div><h4>${safeText(p.name)}</h4><strong>${money(p.price)}</strong><div class="qty-control"><button data-qty="${p.id}" data-change="-1" aria-label="Giảm số lượng ${safeText(p.name)}">−</button><span>${quantity}</span><button data-qty="${p.id}" data-change="1" aria-label="Tăng số lượng ${safeText(p.name)}">+</button></div></div><button class="remove-item" data-remove="${p.id}" aria-label="Xóa ${safeText(p.name)}">×</button></div>`).join(''):'<div class="cart-empty"><span>✿</span><strong>Giỏ hoa còn trống</strong><p>Thêm vài nhành hoa xinh vào giỏ nhé!</p></div>';
 }
 function addToCart(id, qty=1) {
   const product=productById(id);
@@ -147,7 +148,7 @@ function closeUI(fromSwitch=false) {
 }
 function showProduct(p) {
   selectedQty=1;
-  $('#product-modal-content').innerHTML=`<div class="product-detail"><div class="product-detail-photo tone-${p.tone}"><img src="${p.image}" alt="${safeText(p.name)}" onerror="this.style.opacity='.03'"></div><div class="product-detail-copy"><span class="overline">${safeText(categoryNames[p.category])} / ${safeText(p.id)}</span><h2>${safeText(p.name)}</h2><div class="detail-price">${money(p.price)}${p.oldPrice?`<del>${money(p.oldPrice)}</del>`:''}</div><p>${safeText(p.detail)}</p><div class="detail-properties"><div><b>Chất liệu:</b> ${safeText(p.material)}</div><div><b>Kích thước:</b> ${safeText(p.size)}</div><div><b>Tình trạng:</b> Liên hệ xác nhận tồn kho</div></div><span class="overline">SỐ LƯỢNG</span><div class="detail-actions"><div class="detail-qty"><button id="detail-minus" aria-label="Giảm số lượng">−</button><span id="detail-quantity">1</span><button id="detail-plus" aria-label="Tăng số lượng">+</button></div><button id="detail-add" class="btn btn-primary">Thêm vào giỏ <span>→</span></button></div></div></div>`;
+  $('#product-modal-content').innerHTML=`<div class="product-detail"><div class="product-detail-photo tone-${p.tone}"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" onerror="this.style.opacity='.03'"></div><div class="product-detail-copy"><span class="overline">${safeText(categoryNames[p.category])} / ${safeText(p.id)}</span><h2>${safeText(p.name)}</h2><div class="detail-price">${money(p.price)}${p.oldPrice?`<del>${money(p.oldPrice)}</del>`:''}</div><p>${safeText(p.detail)}</p><div class="detail-properties"><div><b>Chất liệu:</b> ${safeText(p.material)}</div><div><b>Kích thước:</b> ${safeText(p.size)}</div><div><b>Tình trạng:</b> Liên hệ xác nhận tồn kho</div></div><span class="overline">SỐ LƯỢNG</span><div class="detail-actions"><div class="detail-qty"><button id="detail-minus" aria-label="Giảm số lượng">−</button><span id="detail-quantity">1</span><button id="detail-plus" aria-label="Tăng số lượng">+</button></div><button id="detail-add" class="btn btn-primary">Thêm vào giỏ <span>→</span></button></div></div></div>`;
   $('#detail-minus').onclick=()=>{selectedQty=Math.max(1,selectedQty-1);$('#detail-quantity').textContent=selectedQty};
   $('#detail-plus').onclick=()=>{selectedQty=Math.min(20,selectedQty+1);$('#detail-quantity').textContent=selectedQty};
   $('#detail-add').onclick=()=>addToCart(p.id,selectedQty);
@@ -173,7 +174,7 @@ function openProduct(id) {
 }
 function startCheckout() {
   if(!cartCount()) return;
-  $('#checkout-summary-lines').innerHTML=cartItems().map(({product:p,quantity})=>`<div class="summary-item"><img src="${p.image}" alt="" onerror="this.style.opacity='.05'"><span><strong>${safeText(p.name)}</strong><small>Số lượng: ${quantity}</small></span><b>${money(p.price*quantity)}</b></div>`).join('');
+  $('#checkout-summary-lines').innerHTML=cartItems().map(({product:p,quantity})=>`<div class="summary-item"><img src="${safeText(p.image)}" alt="" onerror="this.style.opacity='.05'"><span><strong>${safeText(p.name)}</strong><small>Số lượng: ${quantity}</small></span><b>${money(p.price*quantity)}</b></div>`).join('');
   $('#checkout-total').textContent=money(cartTotal());
   $('#order-status').textContent='';
   track('InitiateCheckout',cartParams());
@@ -268,7 +269,26 @@ function setupEvents() {
   });
   $('#float-top').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
 }
-function init(){
+async function loadCatalog(){
+  try {
+    const res=await fetch('/api/products',{cache:'no-store'});
+    if(!res.ok)throw new Error('API chưa khả dụng');
+    const data=await res.json();
+    if(!data.ok||!Array.isArray(data.products))throw new Error('Danh mục không hợp lệ');
+    products=data.products;
+    const label=document.querySelector('.sample-disclaimer');
+    if(label)label.textContent=products.some(p=>p.sample)?'* Một số sản phẩm/giá đang là dữ liệu minh họa. Vui lòng xác nhận trước khi đặt hàng.':'';
+  }catch(e){
+    if(cfg.previewMode)products=sampleProducts.map(p=>({...p,sample:true}));
+    else products=[];
+    const label=document.querySelector('.sample-disclaimer');
+    if(label)label.textContent=cfg.previewMode?'* Chưa kết nối D1; đang hiển thị dữ liệu minh họa.':'Không thể tải danh mục sản phẩm. Vui lòng liên hệ cửa hàng.';
+    console.warn('Product catalog:',e);
+  }
+  cart=Object.fromEntries(Object.entries(cart).filter(([id])=>products.some(p=>p.id===id)));
+  renderProducts();renderCart();
+}
+async function init(){
   $('#copyright-year').textContent=String(new Date().getFullYear());
   if (cfg.previewMode) {
     $('#preview-banner').hidden=false;
@@ -277,7 +297,8 @@ function init(){
     $('.order-submit').disabled=true;
     $('#order-status').textContent='Bản xem trước: chưa tiếp nhận đơn hàng.';
   }
-  renderProducts();renderCart();setupEvents();applyContactConfig();setupConsent();
+  setupEvents();applyContactConfig();setupConsent();
+  await loadCatalog();
   initialHashRouting = true; routeHash(); initialHashRouting = false;
 }
 init();

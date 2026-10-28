@@ -1,12 +1,12 @@
 {
   "name": "hoa-lua-thu-hien",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
     "preview": "npm run build && npx wrangler pages dev dist",
-    "preview:db": "npm run build && npx wrangler pages dev dist --d1 DB=YOUR_D1_DATABASE_ID",
+    "preview:db": "npm run build && npx wrangler pages dev dist --d1 DB=YOUR_D1_DATABASE_ID --r2 PRODUCT_IMAGES",
     "deploy": "npm run build && npx wrangler pages deploy dist --project-name hoa-lua-thu-hien"
   },
   "devDependencies": {

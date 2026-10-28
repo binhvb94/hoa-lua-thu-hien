@@ -1,4 +1,4 @@
-import { products } from '../../data/products.js';
+// Giá và trạng thái bán lấy trực tiếp từ D1, tuyệt đối không tin giá trên trình duyệt.
 
 const json = (body, status=200) => Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const clean = (val, max) => typeof val === 'string' ? val.trim().replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,max) : '';
@@ -20,8 +20,8 @@ export async function onRequestPost({ request, env }) {
   const seen=new Set(), verified=[];
   for(const item of items){
     if(!item || typeof item.id !== 'string' || !Number.isInteger(item.quantity) || item.quantity<1 || item.quantity>20 || seen.has(item.id)) return json({ok:false,error:'Số lượng hoặc sản phẩm không hợp lệ.'},400);
-    const product=products.find(p=>p.id===item.id);
-    if(!product) return json({ok:false,error:'Có sản phẩm không tồn tại trong danh mục.'},400);
+    const product=await env.DB.prepare('SELECT id,name,price FROM products WHERE id=? AND is_active=1 AND is_deleted=0').bind(item.id).first();
+    if(!product) return json({ok:false,error:'Có sản phẩm ngừng bán hoặc không tồn tại. Vui lòng tải lại trang.'},400);
     seen.add(item.id);
     verified.push({id:product.id,name:product.name,quantity:item.quantity,price:product.price,line_total:product.price*item.quantity});
   }
