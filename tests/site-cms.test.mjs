@@ -64,3 +64,31 @@ test('CMS validation denies HTML fields outside schema / unsafe URLs and missing
  const response=await request(saveDraft,env,'/api/admin/site/draft','POST',{section:'hero',values:DEFAULT_SITE.hero,baseRevision:0});
  assert.equal(response.status,401);
 });
+
+test('Meta Pixel: kiểm tra ID, chống script, trùng ID, bật/tắt và xuất bản sau nháp',async()=>{
+ const state=fakeDB(),env={DB:state.db};
+ const login=await createSession(env,new Request('https://shop.test/admin/'));
+ assert.deepEqual(cleanSection('marketing',{enabled:'yes',pixelIds:'123456789012345\n987654321098765'}),{enabled:'yes',pixelIds:'123456789012345\n987654321098765'});
+ assert.throws(()=>cleanSection('marketing',{enabled:'yes',pixelIds:'<script>alert(1)</script>'}));
+ assert.throws(()=>cleanSection('marketing',{enabled:'yes',pixelIds:'123456789012345\n123456789012345'}));
+ assert.throws(()=>cleanSection('marketing',{enabled:'maybe',pixelIds:''}));
+ assert.throws(()=>cleanSection('marketing',{enabled:'yes',pixelIds:'1234'}));
+ assert.throws(()=>cleanSection('marketing',{enabled:'yes',pixelIds:'123456789\n234567890\n345678901\n456789012\n567890123\n678901234'}));
+ const post=await request(saveDraft,env,'/api/admin/site/draft','POST',{section:'marketing',values:{enabled:'yes',pixelIds:'123456789012345'},baseRevision:0},login);
+ assert.equal(post.status,200);
+ const publicBefore=await request(publicGet,env,'/api/site');
+ assert.equal(publicBefore.json.site.marketing.enabled,'no');
+ assert.equal(publicBefore.json.site.marketing.pixelIds,'');
+ const preview=await request(previewGet,env,'/api/admin/site/preview','GET',undefined,login);
+ assert.equal(preview.json.site.marketing.pixelIds,'123456789012345');
+ const published=await request(publish,env,'/api/admin/site/publish','POST',{baseRevision:1},login);
+ assert.equal(published.status,200);
+ const publicAfter=await request(publicGet,env,'/api/site');
+ assert.equal(publicAfter.json.site.marketing.pixelIds,'123456789012345');
+ const remove=await request(saveDraft,env,'/api/admin/site/draft','POST',{section:'marketing',values:{enabled:'no',pixelIds:''},baseRevision:2},login);
+ assert.equal(remove.status,200);
+ const stillLive=await request(publicGet,env,'/api/site');assert.equal(stillLive.json.site.marketing.pixelIds,'123456789012345');
+ const disabled=await request(publish,env,'/api/admin/site/publish','POST',{baseRevision:3},login);
+ assert.equal(disabled.status,200);
+ const final=await request(publicGet,env,'/api/site');assert.deepEqual(final.json.site.marketing,{enabled:'no',pixelIds:''});
+});

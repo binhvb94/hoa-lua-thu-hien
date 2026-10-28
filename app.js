@@ -35,17 +35,24 @@ const pixelReady = () => pixelInitialized && typeof window.fbq === 'function';
 
 function loadPixel() {
   if(CMS_PREVIEW) return;
-  const id = String(cfg.pixelId || '').trim();
-  if (pixelInitialized || !/^\d{8,20}$/.test(id)) return;
+  const ids=Array.isArray(cfg.pixelIds)
+    ? [...new Set(cfg.pixelIds.map(x=>String(x).trim()).filter(id=>/^\d{8,20}$/.test(id)))].slice(0,5)
+    : [];
+  if(pixelInitialized || ids.length===0) return;
   // Tải script Meta Pixel chỉ SAU khi khách đồng ý cookie.
   (function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-  window.fbq('init', id);
+  ids.forEach(id=>window.fbq('init', id));
   pixelInitialized = true;
 }
 function track(eventName, payload = {}, opts = {}) {
   if(CMS_PREVIEW) return;
   if (!pixelReady() || localStorage.getItem(consentKey) !== 'yes') return;
-  try { window.fbq('track', eventName, payload, opts); } catch (err) { console.warn('Meta Pixel:',err); }
+  // trackSingle tránh gửi sự kiện vào Pixel khác được cài bởi công cụ bên ngoài.
+  for(const id of cfg.pixelIds||[]) {
+    if(!/^\d{8,20}$/.test(id)) continue;
+    try { window.fbq('trackSingle', id, eventName, payload, opts); }
+    catch (err) { console.warn('Meta Pixel:',err); }
+  }
 }
 function productParams(p, qty = 1) {
   return {content_ids:[p.id], content_type:'product', content_name:p.name, contents:[{id:p.id,quantity:qty,item_price:p.price}], value:p.price*qty, currency:'VND'};
@@ -76,7 +83,7 @@ function setupConsent() {
   $('#cookie-accept').addEventListener('click', () => setConsent('yes'));
   $('#cookie-decline').addEventListener('click', () => setConsent('no'));
   $('#privacy-open').addEventListener('click', () => {
-    const answer = confirm('Meta Pixel chỉ được bật khi bạn đồng ý. Chọn OK để đồng ý đo lường quảng cáo, hoặc Cancel để từ chối. Bạn có thể thay đổi lựa chọn tại đây bất cứ lúc nào.');
+    const answer = confirm('Các Meta Pixel đã xuất bản chỉ được bật khi bạn đồng ý. Chọn OK để đồng ý đo lường quảng cáo, hoặc Cancel để từ chối. Bạn có thể thay đổi lựa chọn tại đây bất cứ lúc nào.');
     setConsent(answer ? 'yes' : 'no');
   });
 }

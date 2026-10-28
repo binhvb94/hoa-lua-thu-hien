@@ -1,3 +1,11 @@
+# HOA LỤA THU HIỀN – V1.3.3 QUẢN LÝ META PIXEL TRONG ADMIN
+
+Bản đầy đủ nâng cấp V1.3.2. Giữ nguyên quản lý sản phẩm, CMS nội dung website, chỉnh cỡ chữ banner, lưu nháp/xem trước/xuất bản. Thêm mục **Marketing & Meta Pixel** bên trong CMS.
+
+**Không yêu cầu migration SQL mới.** Dùng D1/R2 và Secret hiện có.
+
+Đọc `HUONG_DAN_PIXEL_ADMIN_V1_3_3.md` để triển khai và kiểm tra.
+
 # HOA LỤA THU HIỀN V1.3.2 — BẢN ĐẦY ĐỦ, KHÔI PHỤC CMS
 
 Đây là bộ mã nguồn **đầy đủ** gồm website khách hàng + ADMIN sản phẩm + ADMIN nội dung website + bản nháp/xem trước/xuất bản + điều chỉnh font banner theo thiết bị.

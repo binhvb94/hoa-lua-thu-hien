@@ -15,6 +15,11 @@ function brandPart(name,accent,tagline){
 }
 export function renderSite(site){
  const c=mergedSite(site),b=c.branding,nav=c.navigation,h=c.hero,benefits=c.benefits,cat=c.categories,coll=c.collection,story=c.story,m=c.membership,contact=c.contact,foot=c.footer;
+ // Cấu hình Pixel lấy từ bản CMS được xuất bản; ID chỉ gồm chữ số, không chấp nhận mã script.
+ // Không đọc pixelId cũ trong config.js để thao tác xóa/tắt trong ADMIN có hiệu lực thật.
+ const marketing=c.marketing||{};
+ const ids=String(marketing.pixelIds||'').split(/[\r\n]+/).map(id=>id.trim()).filter(id=>/^\d{8,20}$/.test(id));
+ window.SITE_CONFIG.pixelIds=marketing.enabled==='yes' ? [...new Set(ids)].slice(0,5) : [];
  brandPart(b.name,b.accent,b.tagline);
  const navTexts=[nav.home,nav.products,nav.story,nav.contact];
  $$('.desktop-nav a').forEach((el,i)=>{if(navTexts[i])el.textContent=navTexts[i]});

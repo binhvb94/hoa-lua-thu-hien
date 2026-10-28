@@ -41,6 +41,10 @@ export const SECTIONS = {
     facebookUrl:{label:'Đường dẫn Facebook (https://)',kind:'url',max:900},zaloPhone:{label:'Số điện thoại Zalo',kind:'phone',max:11},
     facebookLabel:{label:'Chú thích Facebook',max:100},
   }},
+  marketing:{label:'Marketing & Meta Pixel',description:'Quản lý Pixel ID (mỗi dòng một ID gồm 8–20 chữ số, tối đa 5). Không dán mã JavaScript. Pixel chỉ tải khi khách đồng ý; trong bản Xem trước, Pixel luôn tắt. Thay đổi chỉ có hiệu lực sau Xuất bản.',fields:{
+    enabled:{label:'Đo lường Meta Pixel',kind:'select'},
+    pixelIds:{label:'Danh sách Pixel ID – mỗi dòng một ID',kind:'pixel-ids',max:250},
+  }},
   visibility:{label:'Ẩn / hiện từng khu vực',description:'Ẩn phần không cần thiết mà không xóa dữ liệu.',fields:{benefits:{label:'Dải lợi ích',kind:'select'},categories:{label:'Danh mục hoa',kind:'select'},story:{label:'Câu chuyện thương hiệu',kind:'select'},membership:{label:'Khu vực đăng ký',kind:'select'},contact:{label:'Khối liên hệ',kind:'select'}}},
   footer: {label:'Chân trang',description:'Mô tả cửa hàng và dòng ký tên cuối trang.',fields:{
     summary:{label:'Giới thiệu ngắn ở chân trang',kind:'textarea',max:400},signature:{label:'Dòng chữ cuối trang',max:150},
@@ -56,6 +60,7 @@ export const DEFAULT_SITE = {
   story:{eyebrow:'CHÚT TÂM TÌNH',heading:'Giữ lại vẻ đẹp của',emphasis:'những ngày thường.',paragraph1:'Ở Hoa Lụa Thu Hiền, chúng tôi tin rằng không cần một dịp đặc biệt để dành tặng bản thân và những người thương một đóa hoa.',paragraph2:'Từ những cành hoa mềm mại đến các kiểu hoa trang trí hiện đại, mỗi lựa chọn đều là cách bạn kể câu chuyện riêng cho tổ ấm của mình.',image1:'https://images.unsplash.com/photo-1494972308805-463bc619d34e?auto=format&fit=crop&w=1000&q=85',image2:'https://images.unsplash.com/photo-1487530811176-3780de880c2d?auto=format&fit=crop&w=600&q=80',cta:'Kết nối với Thu Hiền'},
   membership:{eyebrow:'GÓC NHỎ DÀNH RIÊNG CHO BẠN',heading:'Đăng ký nhận',emphasis:'tin hoa xinh.',description:'Trở thành thành viên để nhận thông tin về mẫu hoa mới và những ưu đãi từ Thu Hiền.'},
   contact:{eyebrow:'LUÔN SẴN SÀNG LẮNG NGHE',heading:'Cần một chút',emphasis:'cảm hứng?',description:'Nhắn cho Thu Hiền để được tư vấn lựa chọn loại hoa, màu sắc và phong cách phù hợp với không gian của bạn.',facebookUrl:'https://www.facebook.com/profile.php?id=61595872285947',zaloPhone:'',facebookLabel:'Fanpage Hoa Lụa Thu Hiền'},
+  marketing:{enabled:'no',pixelIds:''},
   visibility:{benefits:'yes',categories:'yes',story:'yes',membership:'yes',contact:'yes'},
   footer:{summary:'Những nhành hoa mang nét tinh tế, dịu dàng và cảm hứng cho không gian sống.',signature:'Made for little moments of beauty ✳'},
 };

@@ -25,11 +25,11 @@ function renderNav(){
 function fieldNode(key,meta,value){
  const label=document.createElement('label');label.className='cms-field';
  const text=document.createElement('span');text.className='cms-field-name';text.textContent=meta.label;label.append(text);
- const multiline=meta.kind==='textarea';
+ const multiline=meta.kind==='textarea'||meta.kind==='pixel-ids';
  const input=document.createElement(meta.kind==='select'?'select':multiline?'textarea':'input');
  input.dataset.cmsKey=key;input.maxLength=meta.max||2000;input.value=value??'';
- if(meta.kind==='select'){for(const [val,text] of [['yes','Hiển thị'],['no','Tạm ẩn']]){const opt=document.createElement('option');opt.value=val;opt.textContent=text;input.append(opt)}input.value=value??'yes'}
- else if(multiline)input.rows=4;
+ if(meta.kind==='select'){const choices=key==='enabled'&&current==='marketing'?[['yes','Bật Meta Pixel'],['no','Tắt Meta Pixel']]:[['yes','Hiển thị'],['no','Tạm ẩn']];for(const [val,text] of choices){const opt=document.createElement('option');opt.value=val;opt.textContent=text;input.append(opt)}input.value=value??'no'}
+ else if(multiline||meta.kind==='pixel-ids'){input.rows=meta.kind==='pixel-ids'?5:4;input.placeholder=meta.kind==='pixel-ids'?'123456789012345\n987654321098765':'';}
  else input.type=meta.kind==='number'?'number':meta.kind==='color'?'color':meta.kind==='phone'?'tel':meta.kind==='url'?'url':'text';
  if(meta.kind==='number'){input.min=String(meta.minValue);input.max=String(meta.maxValue);input.step='1';input.inputMode='numeric';}
  if(meta.kind==='color'&&!/^#[\da-f]{6}$/i.test(input.value))input.value='#8d4157';
