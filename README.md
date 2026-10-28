@@ -1,3 +1,16 @@
+# HOA LỤA THU HIỀN — V1.3.4: ADMIN ĐƠN HÀNG + KHÁCH HÀNG
+
+**Xem ngay file `HUONG_DAN_CAP_NHAT_V1_3_4.md` để triển khai an toàn.**
+
+- Đơn hàng: từ giỏ hàng → đặt COD → bảng `orders`; hiển thị đầy đủ thông tin và bốn trạng thái Đặt hàng, Đang giao, Đã giao, Đơn hủy.
+- Khách hàng: từ form đăng ký nhận tin → bảng `registrations`; độc lập tuyệt đối với đơn hàng, không tự ghép theo điện thoại hay email.
+- Lịch sử trạng thái lưu trong `order_status_history` bằng trigger SQLite.
+- Không xóa/chỉnh dữ liệu CMS, Pixel, sản phẩm đã có.
+- Chạy `migrations/0004_console_copy.sql` trước khi cập nhật mã nguồn.
+- **Chưa tự bật nhận đơn/đăng ký**: website còn ở previewMode theo V1.3.3. Xem bước 5 trong hướng dẫn.
+
+---
+
 # HOA LỤA THU HIỀN – V1.3.3 QUẢN LÝ META PIXEL TRONG ADMIN
 
 Bản đầy đủ nâng cấp V1.3.2. Giữ nguyên quản lý sản phẩm, CMS nội dung website, chỉnh cỡ chữ banner, lưu nháp/xem trước/xuất bản. Thêm mục **Marketing & Meta Pixel** bên trong CMS.

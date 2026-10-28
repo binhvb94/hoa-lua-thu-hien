@@ -1,4 +1,5 @@
 import {initCms,openCms,hasCmsChanges} from './site-cms.js';
+import {initCommerce,openCommerce,closeCommercePanel} from './admin-commerce.js';
 const $ = s => document.querySelector(s);
 const apiBase='/api/admin';
 const categoryNames={'hoa-lua':'Hoa lụa','hoa-cao-su':'Hoa cao su','hoa-decor':'Hoa giả decor'};
@@ -20,7 +21,7 @@ async function verifySession(){
 async function login(e){e.preventDefault();const b=$('#login-form button');b.disabled=true;$('#login-hint').textContent='Đang xác thực...';try{
  const r=await call('/login',{method:'POST',body:JSON.stringify({password:$('#password').value})});csrf=r.csrf;$('#password').value='';$('#login-hint').textContent='';showScreen(true);await loadProducts();notify('Đăng nhập thành công!');
  }catch(err){$('#login-hint').textContent=err.message}finally{b.disabled=false}}
-async function logout(){try{await call('/logout',{method:'POST',body:'{}'})}catch{}csrf='';allProducts=[];showScreen(false);notify('Đã đăng xuất')}
+async function logout(){try{await call('/logout',{method:'POST',body:'{}'})}catch{}csrf='';allProducts=[];closeCommercePanel();showScreen(false);notify('Đã đăng xuất')}
 async function loadProducts(){try{const r=await call('/products',{method:'GET'});allProducts=r.products||[];render()}catch(e){notify(e.message,true)}}
 function render(){
  const s=$('#search').value.trim().toLocaleLowerCase('vi'),f=$('#status-filter').value;
@@ -75,14 +76,23 @@ async function removeProduct(id){const p=allProducts.find(x=>x.id===id);if(!p||!
 }
 function wire(){
  initCms({call,toast:notify});
+ initCommerce({call,toast:notify});
+ let activeView='products';
  const showView=async (view)=>{
-  if(view==='products' && hasCmsChanges() && !confirm('Có chỉnh sửa chưa lưu. Rời trang nội dung?'))return;
-  const cms=view==='cms';document.querySelector('#cms-work').hidden=!cms;document.querySelector('#san-pham').hidden=cms;document.querySelector('#product-stats').hidden=cms;document.querySelector('#admin-heading').textContent=cms?'Nội dung website':'Danh sách sản phẩm';
-  document.querySelector('a[href="#san-pham"]').classList.toggle('active',!cms);document.querySelector('#nav-cms').classList.toggle('active',cms);
-  if(cms)await openCms();
+  if(activeView==='cms' && view!=='cms' && hasCmsChanges() && !confirm('Có chỉnh sửa chưa lưu. Rời trang nội dung?'))return;
+  activeView=view;
+  const views={products:'san-pham',orders:'orders-work',customers:'customers-work',cms:'cms-work'};
+  for(const [name,id] of Object.entries(views))document.getElementById(id).hidden=(name!==view);
+  document.getElementById('product-stats').hidden=(view!=='products');
+  document.getElementById('admin-heading').textContent=({products:'Danh sách sản phẩm',orders:'Quản lý đơn hàng',customers:'Khách hàng đăng ký nhận tin',cms:'Nội dung website'})[view];
+  for(const [name,nav] of Object.entries({products:'a[href="#san-pham"]',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms'}))document.querySelector(nav).classList.toggle('active',name===view);
+  if(view==='cms')await openCms();
+  if(view==='orders'||view==='customers')await openCommerce(view);
  };
- document.querySelector('#nav-cms').addEventListener('click',(e)=>{e.preventDefault();showView('cms')});
- document.querySelector('a[href="#san-pham"]').addEventListener('click',(e)=>{e.preventDefault();showView('products')});
+ for(const [view,selector] of Object.entries({products:'a[href="#san-pham"]',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms'})){
+  document.querySelector(selector).addEventListener('click',e=>{e.preventDefault();showView(view);});
+ }
+ document.querySelector('#admin-mobile-view').addEventListener('change',e=>{showView(e.target.value).then(()=>{e.target.value=activeView;});});
  $('#year').textContent=String(new Date().getFullYear());$('#login-form').addEventListener('submit',login);
  $('#logout-top').addEventListener('click',logout);$('#logout-side').addEventListener('click',logout);
  $('#search').addEventListener('input',render);$('#status-filter').addEventListener('change',render);
