@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /cms_preview
+Sitemap: https://hoaluathuhien.shop/sitemap.xml

@@ -11,8 +11,8 @@ export async function onRequestPost(ctx){
    const p=normalizeProduct(await parseJson(ctx.request));
    const max=await ctx.env.DB.prepare('SELECT COUNT(*) AS n FROM products WHERE is_deleted=0').first();
    if(Number(max.n)>=500)return send({ok:false,error:'Đạt giới hạn 500 sản phẩm của phiên bản này.'},400);
-   await ctx.env.DB.prepare('INSERT INTO products (id,slug,name,category,price,old_price,badge,detail,material,size,image,tone,is_active,is_sample,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0,(SELECT COALESCE(MAX(sort_order),0)+1 FROM products))')
-   .bind(p.id,p.slug,p.name,p.category,p.price,p.oldPrice,p.badge,p.detail,p.material,p.size,p.image,p.tone,p.active?1:0).run();
+   await ctx.env.DB.prepare('INSERT INTO products (id,slug,name,category,price,old_price,badge,detail,material,size,image,tone,is_active,is_sample,sort_order,seo_title,seo_description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0,(SELECT COALESCE(MAX(sort_order),0)+1 FROM products),?,?)')
+   .bind(p.id,p.slug,p.name,p.category,p.price,p.oldPrice,p.badge,p.detail,p.material,p.size,p.image,p.tone,p.active?1:0,p.seoTitle,p.seoDescription).run();
    await audit(ctx.env,'create',p.id);
    return send({ok:true,product:p},201);
  }catch(e){if(/UNIQUE constraint/.test(String(e)))return send({ok:false,error:'Mã hoặc đường dẫn sản phẩm đã tồn tại.'},409);return send({ok:false,error:e.message||'Không thể thêm sản phẩm.'},400)}

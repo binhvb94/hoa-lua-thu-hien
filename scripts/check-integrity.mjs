@@ -19,7 +19,14 @@ const mustContain={
  'functions/api/admin/site/preview.js':['onRequestGet'],
  'functions/api/admin/site/publish.js':['onRequestPost'],
  'migrations/0003_site_cms.sql':['site_cms','site_publication_history'],
- 'scripts/hash-password.mjs':['100000']
+ 'scripts/hash-password.mjs':['100000'],
+ 'functions/index.js':['publishedSite','X-Robots-Tag'],
+ 'functions/sitemap.xml.js':['sitemap','is_sample=0'],
+ 'functions/san-pham/[slug].js':['Product','priceCurrency','index, follow'],
+ 'functions/danh-muc/[slug].js':['seo-cards'],
+ 'lib/seo.js':['metaBlock','canonical','publishedSite'],
+ 'migrations/0005_product_seo.sql':['seo_title','seo_description'],
+ 'robots.txt':['Sitemap: https://hoaluathuhien.shop/sitemap.xml']
 };
 export async function checkCmsIntegrity(){
  for(const [file,needles] of Object.entries(mustContain)){

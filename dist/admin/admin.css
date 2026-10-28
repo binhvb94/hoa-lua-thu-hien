@@ -47,3 +47,5 @@
 .mobile-admin-nav{display:none;gap:5px;padding:15px 0}.mobile-admin-nav label{font-size:11px;color:var(--muted)}.mobile-admin-nav select{background:white;border:1px solid var(--line);border-radius:9px;padding:12px;width:100%}
 @media(max-width:850px){.mobile-admin-nav{display:flex;flex-direction:column}.commerce-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.commerce-stats .commerce-stats-info{grid-column:span 1}.commerce-work .section-title{align-items:flex-start}.order-detail-body{padding:18px}}
 @media(max-width:540px){.commerce-foot{flex-direction:column;align-items:flex-start}.order-detail-group dl{grid-template-columns:1fr;gap:5px}.order-detail-group dt{margin-top:8px}.commerce-stats>div{padding:13px}.commerce-stats strong{font-size:22px}.commerce-work .section-title>button{width:100%}}
+
+.product-cell a{color:#8d4157;text-decoration:underline;text-underline-offset:2px}

@@ -8,8 +8,8 @@ export async function onRequestPatch(ctx){
    if(!old)return send({ok:false,error:'Không tìm thấy sản phẩm.'},404);
    const p=normalizeProduct(await parseJson(ctx.request),old);
    if(p.id!==id)return send({ok:false,error:'Không thể đổi mã sản phẩm. Hãy tạo mã mới nếu cần.'},400);
-   await ctx.env.DB.prepare('UPDATE products SET slug=?,name=?,category=?,price=?,old_price=?,badge=?,detail=?,material=?,size=?,image=?,tone=?,is_active=?,is_sample=0,updated_at=datetime(\'now\') WHERE id=?')
-   .bind(p.slug,p.name,p.category,p.price,p.oldPrice,p.badge,p.detail,p.material,p.size,p.image,p.tone,p.active?1:0,id).run();
+   await ctx.env.DB.prepare('UPDATE products SET slug=?,name=?,category=?,price=?,old_price=?,badge=?,detail=?,material=?,size=?,image=?,tone=?,is_active=?,is_sample=0,seo_title=?,seo_description=?,updated_at=datetime(\'now\') WHERE id=?')
+   .bind(p.slug,p.name,p.category,p.price,p.oldPrice,p.badge,p.detail,p.material,p.size,p.image,p.tone,p.active?1:0,p.seoTitle,p.seoDescription,id).run();
    await audit(ctx.env,'update',id);
    return send({ok:true,product:p});
  }catch(e){if(/UNIQUE constraint/.test(String(e)))return send({ok:false,error:'Đường dẫn sản phẩm đã được sử dụng.'},409);return send({ok:false,error:e.message||'Không thể sửa sản phẩm.'},400)}

@@ -1,3 +1,13 @@
+# HOA LỤA THU HIỀN V1.3.5 — SEO TOÀN DIỆN
+
+Bổ sung URL HTML riêng cho mỗi sản phẩm và danh mục, dữ liệu Product/Breadcrumb JSON-LD, sitemap XML tự động từ Cloudflare D1, robots.txt, canonical/OG/meta trang chủ từ CMS và trường SEO tùy chọn trong ADMIN. Giữ nguyên V1.3.4: đơn COD, khách đăng ký độc lập, Pixel, CMS và R2.
+
+**Cập nhật:** đọc `HUONG_DAN_CAP_NHAT_V1_3_5.md`, chạy `migrations/0005_console_copy.sql` trên D1 trước, rồi upload toàn bộ mã nguồn lên GitHub nhánh `main`.
+
+**Tự kiểm thử:** `npm run build` và `npm test` (Node.js 22+).
+
+---
+
 # HOA LỤA THU HIỀN — V1.3.4: ADMIN ĐƠN HÀNG + KHÁCH HÀNG
 
 **Xem ngay file `HUONG_DAN_CAP_NHAT_V1_3_4.md` để triển khai an toàn.**

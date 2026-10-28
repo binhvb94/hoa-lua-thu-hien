@@ -6,7 +6,7 @@ const categoryNames={'hoa-lua':'Hoa lụa','hoa-cao-su':'Hoa cao su','hoa-decor'
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n||0);
 let csrf='',allProducts=[],editing=null,slugTouched=false,toastTimer;
-const fields={id:'#f-id',name:'#f-name',slug:'#f-slug',category:'#f-category',price:'#f-price',oldPrice:'#f-old-price',badge:'#f-badge',detail:'#f-detail',material:'#f-material',size:'#f-size',image:'#f-image',tone:'#f-tone',active:'#f-active'};
+const fields={id:'#f-id',name:'#f-name',slug:'#f-slug',category:'#f-category',price:'#f-price',oldPrice:'#f-old-price',badge:'#f-badge',detail:'#f-detail',material:'#f-material',size:'#f-size',image:'#f-image',seoTitle:'#f-seo-title',seoDescription:'#f-seo-description',tone:'#f-tone',active:'#f-active'};
 function notify(msg,error=false){const t=$('#toast');t.textContent=msg;t.className='show'+(error?' error':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='',4500)}
 async function call(path,options={}){
  let response;try{response=await fetch(apiBase+path,{credentials:'same-origin',cache:'no-store',...options,headers:{...(options.body instanceof FormData?{}:{'Content-Type':'application/json'}),...(options.headers||{}),...(options.method&&options.method!=='GET'?{'X-CSRF-Token':csrf}:{})}})}catch{throw new Error('Không kết nối được máy chủ. Kiểm tra mạng và thử lại.')}
@@ -33,7 +33,7 @@ function render(){
  $('#list-foot').textContent=`Đang hiển thị ${list.length} / ${allProducts.length} sản phẩm · Cập nhật lưu trực tiếp vào Cloudflare D1`;
  $('#empty-list').hidden=list.length>0;
  $('#product-list').innerHTML=list.map(p=>`<tr>
- <td><div class="product-cell"><img src="${esc(p.image)}" loading="lazy" alt=""><div><strong>${esc(p.name)}</strong><small>${esc(p.id)}${p.sample?' · SẢN PHẨM MẪU':''}</small></div></div></td>
+ <td><div class="product-cell"><img src="${esc(p.image)}" loading="lazy" alt=""><div><strong>${esc(p.name)}</strong><small>${esc(p.id)}${p.sample?' · SẢN PHẨM MẪU':''}</small><small><a href="/san-pham/${encodeURIComponent(p.slug)}/" target="_blank" rel="noopener noreferrer">Xem trang SEO ↗</a></small></div></div></td>
  <td>${esc(categoryNames[p.category]||p.category)}</td><td>${money(p.price)}</td>
  <td><span class="pill ${p.active?'active':'hidden'}">${p.active?'● Đang bán':'○ Đang ẩn'}</span>${p.sample?' <span class="pill sample">MẪU</span>':''}</td>
  <td><button class="action-btn" data-edit="${esc(p.id)}">Sửa</button><button class="action-btn danger" data-delete="${esc(p.id)}">Xóa</button></td></tr>`).join('');
