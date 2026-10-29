@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {DatabaseSync} from 'node:sqlite';
+import {onRequestGet as pageHandler} from '../functions/san-pham/[slug].js';
+
+const root=new URL('../',import.meta.url);
+const source=(name)=>readFileSync(new URL(name,root),'utf8');
+test('V1.3.6: main shop clicks product via clean SEO path; old hash links are redirected',()=>{
+ const app=source('app.js');
+ assert.match(app,/location\.assign\(`\/san-pham\/\$\{encodeURIComponent\(p.slug\)\}\/`\)/);
+ assert.match(app,/location\.replace\(`\/san-pham\/\$\{encodeURIComponent\(slug\)\}\/`\)/);
+ assert.doesNotMatch(app,/location\.hash\s*=\s*`san-pham/);
+ assert.match(app,/history\.replaceState\(history.state,'',location.pathname\+location.search\)/);
+ assert.match(app,/url.searchParams.get\('mo_gio'\)==='1'/);
+ assert.match(source('config.js'),/previewMode:\s*false/);
+});
+test('V1.3.6: SEO product SSR has direct add-to-cart and NO return to #san-pham',async()=>{
+ const db=new DatabaseSync(':memory:');
+ for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql'])db.exec(source(`migrations/${f}`));
+ const env={DB:{prepare(sql){const stmt=db.prepare(sql);let args=[];return {bind(...x){args=x;return this},first(){return Promise.resolve(stmt.get(...args)||null)}}}}};
+ const response=await pageHandler({env,params:{slug:'bo-hoa-hong-lua-hong-phan'},request:new Request('https://hoaluathuhien.shop/san-pham/bo-hoa-hong-lua-hong-phan/')});
+ const html=await response.text();
+ assert.equal(response.status,200);
+ assert.match(html,/id="seo-add"/);
+ assert.match(html,/data-id="TH001"/);
+ assert.match(html,/href="\/\?mo_gio=1"/);
+ assert.match(html,/src="\/seo-product.js"/);
+ assert.doesNotMatch(html,/#san-pham\//);
+ assert.match(html,/<h1>Bó hoa hồng lụa hồng phấn<\/h1>/);
+});
+test('V1.3.6: SEO product and main shop share cart and send events only on opt-in',async()=>{
+ const callbacks={};const local=new Map([['thuhien_cookie_consent_v1','no']]);
+ const button={dataset:{id:'TH001',price:'189000',name:'Bó hoa hồng lụa hồng phấn'},addEventListener(type,cb){callbacks['add-'+type]=cb}};
+ const qty={value:'2',focus(){}};const status={textContent:''};
+ const makeEl=id=>({hidden:true,addEventListener(type,cb){callbacks[id+type]=cb}});
+ const els={'seo-add':button,'seo-quantity':qty,'seo-add-status':status,'seo-consent':makeEl('seo-consent'),'seo-consent-yes':makeEl('seo-consent-yes'),'seo-consent-no':makeEl('seo-consent-no'),'seo-consent-settings':makeEl('seo-consent-settings')};
+ const storage={getItem:k=>local.get(k)??null,setItem:(k,v)=>local.set(k,v)};
+ const context={document:{getElementById:id=>els[id]??null},localStorage:storage,console,window:{},fetch:async()=>({ok:true,json:async()=>({site:{marketing:{enabled:'yes',pixelIds:'123456789012345'}}})}),location:{reload(){}},Set,Number,JSON,Promise};
+ vm.runInNewContext(source('seo-product.js'),context);
+ await new Promise(r=>setImmediate(r));
+ callbacks['add-click']();
+ const cart=JSON.parse(local.get('thuhien_cart_v1'));
+ assert.equal(cart.TH001,2);
+ assert.match(status.textContent,/Đã thêm 2 sản phẩm/);
+ qty.value='19';callbacks['add-click']();
+ assert.equal(JSON.parse(local.get('thuhien_cart_v1')).TH001,20);
+ qty.value='2';callbacks['add-click']();
+ assert.match(status.textContent,/tối đa 20/);
+});

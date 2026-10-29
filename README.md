@@ -1,3 +1,9 @@
+# Hoa Lụa Thu Hiền V1.3.6 – URL sản phẩm chuẩn SEO + giỏ hàng dùng chung
+
+Nâng cấp không thay đổi database. Khắc phục link `#san-pham/...`, cho phép xem trang sản phẩm HTML độc lập và thêm vào giỏ trực tiếp; hỗ trợ `/?mo_gio=1` để mở giỏ hàng khi quay lại trang chủ. Giữ nguyên ADMIN, CMS, đơn hàng, khách đăng ký và Meta Pixel. Xem `HUONG_DAN_CAP_NHAT_V1_3_6.md` để triển khai.
+
+---
+
 # HOA LỤA THU HIỀN V1.3.5 — SEO TOÀN DIỆN
 
 Bổ sung URL HTML riêng cho mỗi sản phẩm và danh mục, dữ liệu Product/Breadcrumb JSON-LD, sitemap XML tự động từ Cloudflare D1, robots.txt, canonical/OG/meta trang chủ từ CMS và trường SEO tùy chọn trong ADMIN. Giữ nguyên V1.3.4: đơn COD, khách đăng ký độc lập, Pixel, CMS và R2.

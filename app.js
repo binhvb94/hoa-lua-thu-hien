@@ -16,8 +16,6 @@ let filter = 'all', search = '', sort = 'default', modal = null, lastFocus = nul
 let cart = readCart();
 let pendingOrderKey = null;
 let pixelInitialized = false;
-let lastTrackedProduct = '';
-let initialHashRouting = false;
 
 function readCart() {
   try {
@@ -68,8 +66,6 @@ function setConsent(value) {
     loadPixel();
     if (pixelReady()) {
       track('PageView');
-      const slug = decodeURIComponent(location.hash.replace(/^#san-pham\//, ''));
-      if (location.hash.startsWith('#san-pham/') && productBySlug(slug)) track('ViewContent',productParams(productBySlug(slug)));
     }
   } else if (pixelInitialized) {
     // Meta không cung cấp cơ chế unload Pixel đáng tin cậy: reload để ngừng tải/đo lường.
@@ -94,7 +90,7 @@ function renderProducts() {
   $('#result-count').textContent = `${listing.length} sản phẩm`;
   $('#empty-products').hidden = listing.length > 0;
   $('#product-grid').innerHTML = listing.map(p => `<article class="product-card">
-    <div class="product-img-wrap tone-${p.tone}" data-view="${p.id}" role="button" tabindex="0" aria-label="Xem ${safeText(p.name)}"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.03'" />${p.badge ? `<span class="product-tag">${safeText(p.badge)}</span>` : ''}
+    <div class="product-img-wrap tone-${p.tone}" data-view="${p.id}" role="link" tabindex="0" aria-label="Mở trang sản phẩm ${safeText(p.name)}"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.03'" />${p.badge ? `<span class="product-tag">${safeText(p.badge)}</span>` : ''}
       <div class="product-card-actions"><button class="quick-view" data-view="${p.id}" type="button">Xem chi tiết</button><button class="quick-add" data-add="${p.id}" type="button">+ Thêm giỏ</button></div></div>
     <div class="product-info"><span class="product-category">${categoryNames[p.category]}</span><a class="product-name" href="/san-pham/${encodeURIComponent(p.slug)}/">${safeText(p.name)}</a><div class="product-price">${money(p.price)} ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>`:''}</div></div>
   </article>`).join('');
@@ -156,33 +152,29 @@ function closeUI(fromSwitch=false) {
   $('#overlay').hidden=true;
   document.body.classList.remove('locked');
   if(!fromSwitch) lastFocus?.focus?.();
-  if(old==='product' && !fromSwitch && location.hash.startsWith('#san-pham/')) location.hash='bo-suu-tap';
 }
-function showProduct(p) {
-  selectedQty=1;
-  $('#product-modal-content').innerHTML=`<div class="product-detail"><div class="product-detail-photo tone-${p.tone}"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" onerror="this.style.opacity='.03'"></div><div class="product-detail-copy"><span class="overline">${safeText(categoryNames[p.category])} / ${safeText(p.id)}</span><h2>${safeText(p.name)}</h2><div class="detail-price">${money(p.price)}${p.oldPrice?`<del>${money(p.oldPrice)}</del>`:''}</div><p>${safeText(p.detail)}</p><div class="detail-properties"><div><b>Chất liệu:</b> ${safeText(p.material)}</div><div><b>Kích thước:</b> ${safeText(p.size)}</div><div><b>Tình trạng:</b> Liên hệ xác nhận tồn kho</div></div><a class="seo-product-link" href="/san-pham/${encodeURIComponent(p.slug)}/">Xem trang thông tin sản phẩm ↗</a><span class="overline">SỐ LƯỢNG</span><div class="detail-actions"><div class="detail-qty"><button id="detail-minus" aria-label="Giảm số lượng">−</button><span id="detail-quantity">1</span><button id="detail-plus" aria-label="Tăng số lượng">+</button></div><button id="detail-add" class="btn btn-primary">Thêm vào giỏ <span>→</span></button></div></div></div>`;
-  $('#detail-minus').onclick=()=>{selectedQty=Math.max(1,selectedQty-1);$('#detail-quantity').textContent=selectedQty};
-  $('#detail-plus').onclick=()=>{selectedQty=Math.min(20,selectedQty+1);$('#detail-quantity').textContent=selectedQty};
-  $('#detail-add').onclick=()=>addToCart(p.id,selectedQty);
-  if(modal!=='product') openUI('product');
-  if(lastTrackedProduct!==p.id || modal==='product') {
-    lastTrackedProduct=p.id;
-    if (!initialHashRouting) track('PageView');
-    track('ViewContent',productParams(p));
+// Mọi sản phẩm đi về URL thật được server render, không gán #san-pham/.
+// Legacy #san-pham/... vẫn được hỗ trợ để các link Facebook cũ không hỏng.
+function routeLegacyHash() {
+  if (!location.hash.startsWith('#san-pham/')) return;
+  let slug = '';
+  try { slug = decodeURIComponent(location.hash.slice('#san-pham/'.length)); } catch { return; }
+  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length <= 180) {
+    location.replace(`/san-pham/${encodeURIComponent(slug)}/`);
   }
 }
-function routeHash() {
-  if(location.hash.startsWith('#san-pham/')) {
-    let slug=''; try {slug=decodeURIComponent(location.hash.slice('#san-pham/'.length));} catch {return;}
-    const p=productBySlug(slug);
-    if(p) showProduct(p);
-  } else if(modal==='product') closeUI();
-}
 function openProduct(id) {
-  const p=productById(id);
-  if(!p) return;
-  if(location.hash===`#san-pham/${p.slug}`) showProduct(p);
-  else location.hash=`san-pham/${p.slug}`;
+  const p = productById(id);
+  if (!p || !p.slug) return;
+  location.assign(`/san-pham/${encodeURIComponent(p.slug)}/`);
+}
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return false;
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+  // Giữ URL trang chủ sạch: các anchor chỉ dùng để cuộn tới section.
+  if (location.hash) history.replaceState(history.state,'',location.pathname+location.search);
+  return true;
 }
 function startCheckout() {
   if(!cartCount()) return;
@@ -255,13 +247,18 @@ function setupEvents() {
     const qty=e.target.closest('[data-qty]');if(qty){changeQty(qty.dataset.qty,Number(qty.dataset.change));return;}
     const remove=e.target.closest('[data-remove]');if(remove){changeQty(remove.dataset.remove,-100);return;}
     const category=e.target.closest('[data-category-link]');if(category){search='';setFilter(category.dataset.categoryLink);}
+    const sectionLink=e.target.closest('a[href^="#"]');
+    if(sectionLink){
+      const id=sectionLink.getAttribute('href').slice(1);
+      if(id && document.getElementById(id)){e.preventDefault();scrollToSection(id);}
+    }
     if(e.target.closest('[data-close]'))closeUI();
   });
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape' && modal)closeUI();
     if((e.key==='Enter'||e.key===' ') && e.target.matches('.product-img-wrap[data-view]')){e.preventDefault();openProduct(e.target.dataset.view);}
   });
-  window.addEventListener('hashchange',routeHash);
+  window.addEventListener('hashchange',routeLegacyHash);
   $('#overlay').addEventListener('click',()=>closeUI());
   $('#open-cart').addEventListener('click',()=>openUI('cart'));
   $('#open-search').addEventListener('click',()=>openUI('search'));
@@ -277,7 +274,7 @@ function setupEvents() {
   $('#search-form').addEventListener('submit',e=>{
     e.preventDefault();search=$('#search-input').value.trim().slice(0,120);setFilter('all');
     if(search)track('Search',{search_string:search});
-    closeUI();location.hash='bo-suu-tap';
+    closeUI();scrollToSection('bo-suu-tap');
   });
   $('#float-top').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
 }
@@ -312,6 +309,19 @@ async function init(){
   }
   setupEvents();applyContactConfig();setupConsent();
   await loadCatalog();
-  initialHashRouting = true; routeHash(); initialHashRouting = false;
+  routeLegacyHash();
+  // Khi mua hàng từ trang SEO, trả về trang chủ và tự mở giỏ (không dùng hash).
+  const url=new URL(location.href);
+  if(url.searchParams.get('mo_gio')==='1' && !CMS_PREVIEW){
+    url.searchParams.delete('mo_gio');
+    history.replaceState(history.state,'',url.pathname+url.search+url.hash);
+    openUI('cart');
+  } else if(location.hash && !location.hash.startsWith('#san-pham/')){
+    const id=decodeURIComponent(location.hash.slice(1));
+    if(document.getElementById(id)){
+      document.getElementById(id).scrollIntoView();
+      history.replaceState(history.state,'',location.pathname+location.search);
+    }
+  }
 }
 init();
