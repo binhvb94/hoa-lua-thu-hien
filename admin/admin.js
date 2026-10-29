@@ -49,7 +49,15 @@ function openEditor(product){editing=product||null;slugTouched=!!product;$('#edi
   const input=$(s),val=product?.[k];if(input.type==='checkbox')input.checked=product?Boolean(val):true;
   else input.value=val??(k==='id'?nextId():k==='category'?(adminCategories.find(c=>c.active)?.slug||'hoa-lua'):k==='tone'?'rose':k==='recommendationMode'?'mixed':k==='displaySoldCount'?0:'');
  }
+ for(const star of [1,2,3,4,5])$('#f-external-rating-'+star).value=product?.externalRatingCounts?.[star]??0;
+ $('#f-external-rating-source').value=product?.externalRatingSource||'';previewExternalRatings();
  $('#f-id').readOnly=!!product;previewImage();$('#editor-backdrop').hidden=false;document.body.style.overflow='hidden';$('#f-name').focus();loadReviewModeration(product);
+}
+function previewExternalRatings(){
+ const values=[1,2,3,4,5].map(star=>Math.max(0,Number($('#f-external-rating-'+star).value)||0));
+ const total=values.reduce((a,b)=>a+b,0);
+ const weighted=values.reduce((sum,n,i)=>sum+n*(i+1),0);
+ $('#manual-rating-preview').textContent=total?`${(weighted/total).toFixed(2).replace('.',',')}/5 sao • ${new Intl.NumberFormat('vi-VN').format(total)} đánh giá tổng hợp (cửa hàng nhập)`:'Chưa nhập đánh giá tổng hợp';
 }
 async function loadReviewModeration(product){
  const section=$('#verified-metrics'),stats=$('#verified-stats'),list=$('#verified-review-list');
@@ -82,7 +90,7 @@ async function uploadImage(e){const input=e.target,file=input.files?.[0];if(!fil
  }catch(err){notify(err.message,true)}finally{input.value='';button.textContent='↑ Tải ảnh từ điện thoại / máy tính';}
 }
 function collect(){const out={};for(const [k,s] of Object.entries(fields)){const v=$(s);out[k]=v.type==='checkbox'?v.checked:v.value.trim()}
- out.id=out.id.toUpperCase();out.price=Number(out.price);out.oldPrice=out.oldPrice?Number(out.oldPrice):null;out.displaySoldCount=Number(out.displaySoldCount);return out;
+ out.id=out.id.toUpperCase();out.price=Number(out.price);out.oldPrice=out.oldPrice?Number(out.oldPrice):null;out.displaySoldCount=Number(out.displaySoldCount);out.externalRatingCounts=Object.fromEntries([1,2,3,4,5].map(star=>[star,Number($('#f-external-rating-'+star).value)]));out.externalRatingSource=$('#f-external-rating-source').value.trim();return out;
 }
 async function saveProduct(e){e.preventDefault();const data=collect(),button=$('#save-product');if(!$('#product-form').reportValidity())return;
  button.disabled=true;button.textContent='Đang lưu...';try{
@@ -94,6 +102,7 @@ async function removeProduct(id){const p=allProducts.find(x=>x.id===id);if(!p||!
  try{await call('/products/'+encodeURIComponent(id),{method:'DELETE'});await loadProducts();notify('Đã xóa sản phẩm khỏi danh mục.')}catch(err){notify(err.message,true)}
 }
 function wire(){
+ for(const star of [1,2,3,4,5])$('#f-external-rating-'+star).addEventListener('input',previewExternalRatings);
  initCms({call,toast:notify});
  initSeoAdmin({call,toast:notify,getProducts:()=>allProducts,onEditProduct:p=>{openEditor(p);setTimeout(()=>$("#f-seo-title").focus(),0)}});
  initCommerce({call,toast:notify});

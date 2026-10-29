@@ -1,0 +1,7 @@
+-- Thống kê đánh giá thực tế ở các kênh ngoài website. Chỉ nhập số liệu có nguồn.
+ALTER TABLE products ADD COLUMN external_rating_1 INTEGER NOT NULL DEFAULT 0 CHECK(external_rating_1 BETWEEN 0 AND 1000000);
+ALTER TABLE products ADD COLUMN external_rating_2 INTEGER NOT NULL DEFAULT 0 CHECK(external_rating_2 BETWEEN 0 AND 1000000);
+ALTER TABLE products ADD COLUMN external_rating_3 INTEGER NOT NULL DEFAULT 0 CHECK(external_rating_3 BETWEEN 0 AND 1000000);
+ALTER TABLE products ADD COLUMN external_rating_4 INTEGER NOT NULL DEFAULT 0 CHECK(external_rating_4 BETWEEN 0 AND 1000000);
+ALTER TABLE products ADD COLUMN external_rating_5 INTEGER NOT NULL DEFAULT 0 CHECK(external_rating_5 BETWEEN 0 AND 1000000);
+ALTER TABLE products ADD COLUMN external_rating_source TEXT NOT NULL DEFAULT '';
