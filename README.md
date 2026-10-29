@@ -1,3 +1,7 @@
+# Hoa Lụa Thu Hiền V1.3.8
+
+**Tham khảo `HUONG_DAN_CAP_NHAT_V1_3_8.md` để chạy migration số 6 trước khi upload toàn bộ mã nguồn.**
+
 # Hoa Lụa Thu Hiền V1.3.7 – SEO ADMIN tập trung
 
 Thêm mục **Quản lý SEO** vào ADMIN: tùy biến thẻ title/description/ảnh chia sẻ cho trang chủ và ba danh mục, xem trước nháp có bảo vệ, xuất bản qua CMS và quản lý SEO sản phẩm trong một nơi. **Không cần migration mới.** Duy trì toàn bộ chức năng V1.3.6. Xem `HUONG_DAN_CAP_NHAT_V1_3_7.md`.

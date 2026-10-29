@@ -1,6 +1,7 @@
 import { products as sampleProducts, categoryNames } from './data/products.js';
 import {loadSiteContent, CMS_PREVIEW} from './site-frontend.js';
 let products = [];
+let catalogCategories = [];
 
 const cfg = window.SITE_CONFIG || {};
 if (CMS_PREVIEW) cfg.previewMode = true;
@@ -84,7 +85,7 @@ function setupConsent() {
   });
 }
 function renderProducts() {
-  let listing = products.filter(p => (filter === 'all' || p.category === filter) && (!search || (p.name+' '+p.detail+' '+categoryNames[p.category]).toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi'))));
+  let listing = products.filter(p => (filter === 'all' || (p.categorySlugs||[p.category]).includes(filter)) && (!search || (p.name+' '+p.detail+' '+(categoryNames[p.category]||p.category)).toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi'))));
   if(sort === 'low') listing.sort((a,b)=>a.price-b.price);
   if(sort === 'high') listing.sort((a,b)=>b.price-a.price);
   $('#result-count').textContent = `${listing.length} sản phẩm`;
@@ -92,7 +93,7 @@ function renderProducts() {
   $('#product-grid').innerHTML = listing.map(p => `<article class="product-card">
     <div class="product-img-wrap tone-${p.tone}" data-view="${p.id}" role="link" tabindex="0" aria-label="Mở trang sản phẩm ${safeText(p.name)}"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.03'" />${p.badge ? `<span class="product-tag">${safeText(p.badge)}</span>` : ''}
       <div class="product-card-actions"><button class="quick-view" data-view="${p.id}" type="button">Xem chi tiết</button><button class="quick-add" data-add="${p.id}" type="button">+ Thêm giỏ</button></div></div>
-    <div class="product-info"><span class="product-category">${categoryNames[p.category]}</span><a class="product-name" href="/san-pham/${encodeURIComponent(p.slug)}/">${safeText(p.name)}</a><div class="product-price">${money(p.price)} ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>`:''}</div></div>
+    <div class="product-info"><span class="product-category">${safeText(categoryNames[p.category]||p.category)}</span><a class="product-name" href="/san-pham/${encodeURIComponent(p.slug)}/">${safeText(p.name)}</a><div class="product-price">${money(p.price)} ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>`:''}</div></div>
   </article>`).join('');
 }
 function setFilter(nextFilter) {
@@ -269,7 +270,7 @@ function setupEvents() {
   $('#success-close').addEventListener('click',()=>closeUI());
   $('#open-menu').addEventListener('click',()=>{const m=$('#mobile-menu');m.hidden=!m.hidden;$('#open-menu').setAttribute('aria-expanded',String(!m.hidden));});
   $$('#mobile-menu a').forEach(a=>a.addEventListener('click',()=>{$('#mobile-menu').hidden=true;$('#open-menu').setAttribute('aria-expanded','false');}));
-  $$('.filter-btn').forEach(b=>b.addEventListener('click',()=>{search='';setFilter(b.dataset.filter);}));
+  $('.filter-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(b){search='';setFilter(b.dataset.filter)}});
   $('#sort-products').addEventListener('change',e=>{sort=e.target.value;renderProducts();});
   $('#search-form').addEventListener('submit',e=>{
     e.preventDefault();search=$('#search-input').value.trim().slice(0,120);setFilter('all');
@@ -277,6 +278,19 @@ function setupEvents() {
     closeUI();scrollToSection('bo-suu-tap');
   });
   $('#float-top').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+}
+async function loadCatalogCategories(){
+ try{
+  const r=await fetch('/api/categories',{cache:'no-store'});const d=await r.json();if(!r.ok||!d.ok||!Array.isArray(d.categories))throw Error('Danh mục chưa khả dụng');
+  catalogCategories=d.categories;for(const c of catalogCategories)categoryNames[c.slug]=c.name;
+  const grid=$('.category-grid');if(grid){grid.replaceChildren();catalogCategories.forEach((c,i)=>{
+   const link=document.createElement('a');link.href=`/danh-muc/${encodeURIComponent(c.slug)}/`;link.className='category-card';
+   const photo=document.createElement('div');photo.className='category-image';const img=document.createElement('img');img.src=c.image||'/assets/logo.svg';img.alt=c.name;img.loading='lazy';photo.append(img);
+   const detail=document.createElement('div');detail.className='category-details';const kicker=document.createElement('span');kicker.textContent=String(i+1).padStart(2,'0')+' / BỘ SƯU TẬP';const h=document.createElement('h3');h.textContent=c.name;const action=document.createElement('span');action.className='category-action';action.textContent='Khám phá ↗';detail.append(kicker,h,action);link.append(photo,detail);grid.append(link);
+  })}
+  const filters=$('.filter-tabs');if(filters){filters.replaceChildren();for(const c of [{slug:'all',name:'Tất cả'},...catalogCategories]){const b=document.createElement('button');b.className='filter-btn'+(c.slug==='all'?' selected':'');b.dataset.filter=c.slug;b.type='button';b.textContent=c.name;filters.append(b)}}
+  const footer=$('.footer-col');if(footer){const links=Array.from(footer.querySelectorAll('a[href^="/danh-muc/"]'));for(const x of links)x.remove();const insertion=footer.querySelector('a[href="#cau-chuyen"]');for(const c of catalogCategories){const a=document.createElement('a');a.href=`/danh-muc/${encodeURIComponent(c.slug)}/`;a.textContent=c.name;footer.insertBefore(a,insertion)}}
+ }catch(e){console.warn('Category catalog:',e)}
 }
 async function loadCatalog(){
   try {
@@ -308,6 +322,7 @@ async function init(){
     $('#order-status').textContent='Bản xem trước: chưa tiếp nhận đơn hàng.';
   }
   setupEvents();applyContactConfig();setupConsent();
+  await loadCatalogCategories();
   await loadCatalog();
   routeLegacyHash();
   // Khi mua hàng từ trang SEO, trả về trang chủ và tự mở giỏ (không dùng hash).

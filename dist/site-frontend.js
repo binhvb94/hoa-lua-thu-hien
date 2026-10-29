@@ -59,6 +59,7 @@ export function renderSite(site){
    $$('.footer-col:last-child a').forEach(a=>{if(a.textContent.includes('Facebook'))a.href=contact.facebookUrl});
  }
  window.SITE_CONFIG.zaloPhone=contact.zaloPhone;
+ const icon=document.querySelector('link[rel="icon"]');if(icon){icon.href=c.seo?.favicon||'/assets/logo.svg';icon.type=/\.svg(?:$|\?)/.test(icon.href)?'image/svg+xml':/\.webp(?:$|\?)/.test(icon.href)?'image/webp':'image/png';}
  const name=(b.name+' '+b.accent).trim();document.title=c.seo?.homeTitle?.trim()||`${name} | Hoa đẹp cho mọi không gian`;
  const og=$('meta[property="og:title"]');if(og)og.content=document.title;
 }

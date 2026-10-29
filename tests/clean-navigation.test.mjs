@@ -18,8 +18,8 @@ test('V1.3.6: main shop clicks product via clean SEO path; old hash links are re
 });
 test('V1.3.6: SEO product SSR has direct add-to-cart and NO return to #san-pham',async()=>{
  const db=new DatabaseSync(':memory:');
- for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql'])db.exec(source(`migrations/${f}`));
- const env={DB:{prepare(sql){const stmt=db.prepare(sql);let args=[];return {bind(...x){args=x;return this},first(){return Promise.resolve(stmt.get(...args)||null)}}}}};
+ for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql'])db.exec(source(`migrations/${f}`));
+ const env={DB:{prepare(sql){const stmt=db.prepare(sql);let args=[];return {bind(...x){args=x;return this},first(){return Promise.resolve(stmt.get(...args)||null)},all(){return Promise.resolve({results:stmt.all(...args)})}}}}};
  const response=await pageHandler({env,params:{slug:'bo-hoa-hong-lua-hong-phan'},request:new Request('https://hoaluathuhien.shop/san-pham/bo-hoa-hong-lua-hong-phan/')});
  const html=await response.text();
  assert.equal(response.status,200);

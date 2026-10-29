@@ -3,6 +3,7 @@ import {SECTIONS} from '/data/site-schema.js';
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const PAGES={
+ sitewide:{title:'SEO toàn site · Favicon & ảnh chia sẻ',url:'/',keys:['favicon','defaultShareImage','defaultShareTitle','defaultShareDescription']},
  home:{title:'Trang chủ',url:'/',keys:['homeTitle','homeDescription','socialImage']},
  'hoa-lua':{title:'Danh mục hoa lụa',url:'/danh-muc/hoa-lua/',keys:['categoryHoaLuaTitle','categoryHoaLuaDescription','categoryHoaLuaImage']},
  'hoa-cao-su':{title:'Danh mục hoa cao su',url:'/danh-muc/hoa-cao-su/',keys:['categoryHoaCaoSuTitle','categoryHoaCaoSuDescription','categoryHoaCaoSuImage']},
@@ -39,16 +40,16 @@ function pageForm(){
   const meta=SECTIONS.seo.fields[key];
   const label=document.createElement('label');label.className='seo-field';
   const head=document.createElement('span');head.textContent=meta.label;label.append(head);
-  const input=document.createElement(index===1?'textarea':'input');input.dataset.key=key;input.value=values[key]??'';
-  if(index===1){input.rows=3;input.maxLength=180}else{input.type='text';input.maxLength=meta.max||900}
-  input.placeholder=index===0?'Để trống sẽ tự tạo theo tên trang':index===1?'Để trống sẽ dùng mô tả mặc định':'https://... hoặc /media/... (có thể bỏ trống)';
+  const isTextArea=meta.kind==='textarea';const input=document.createElement(isTextArea?'textarea':'input');input.dataset.key=key;input.value=values[key]??'';
+  if(isTextArea){input.rows=3;input.maxLength=meta.max||180}else{input.type='text';input.maxLength=meta.max||900}
+  input.placeholder=meta.kind==='seo-image'?'https://... hoặc /media/... (để trống dùng mặc định)':isTextArea?'Mô tả ngắn':'Để trống sẽ tự tạo';
   input.addEventListener('input',()=>{values[key]=input.value;pending=true;info();renderSnippet()});
   label.append(input);
-  if(index===2){
+  if(meta.kind==='seo-image'){
    const upload=document.createElement('div');upload.className='seo-upload-row';
    const file=document.createElement('input');file.type='file';file.accept='image/jpeg,image/png,image/webp';file.hidden=true;
    const button=document.createElement('button');button.type='button';button.className='ghost';button.textContent='↑ Tải ảnh chia sẻ lên R2';
-   const hint=document.createElement('small');hint.textContent='Ảnh khuyến nghị 1200×630 px, tối đa 5 MB.';
+   const hint=document.createElement('small');hint.textContent=key==='favicon'?'Favicon: PNG vuông 512×512 khuyên dùng · tối đa 5 MB.':'Ảnh chia sẻ: 1200×630 px khuyên dùng · tối đa 5 MB.';
    button.onclick=()=>file.click();file.addEventListener('change',async()=>{
     const f=file.files?.[0];if(!f)return;
     if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>5*1024*1024){toast('Chỉ chọn JPG/PNG/WebP tối đa 5 MB.',true);file.value='';return;}
@@ -63,8 +64,9 @@ function pageForm(){
 }
 function renderSnippet(){
  const cfg=PAGES[tab];if(!cfg)return;
- const rawTitle=values?.[cfg.keys[0]]?.trim()||defaults[tab][0];
- const rawDesc=values?.[cfg.keys[1]]?.trim()||defaults[tab][1];
+ const isSitewide=tab==='sitewide';
+ const rawTitle=isSitewide?(values?.defaultShareTitle?.trim()||values?.homeTitle?.trim()||defaults.home[0]):(values?.[cfg.keys[0]]?.trim()||defaults[tab][0]);
+ const rawDesc=isSitewide?(values?.defaultShareDescription?.trim()||values?.homeDescription?.trim()||defaults.home[1]):(values?.[cfg.keys[1]]?.trim()||defaults[tab][1]);
  $('#seo-google-title').textContent=rawTitle;
  $('#seo-google-url').textContent=DOMAIN+cfg.url;
  $('#seo-google-desc').textContent=rawDesc;
@@ -75,9 +77,10 @@ function renderSnippet(){
  $('#seo-desc-count').className=descLength>170?'seo-too-long':'';
  $('#seo-social-title').textContent=rawTitle;
  $('#seo-social-desc').textContent=rawDesc;
- const im=values?.[cfg.keys[2]]?.trim()||'';
+ const im=isSitewide?(values?.defaultShareImage?.trim()||''):(values?.[cfg.keys[2]]?.trim()||values?.defaultShareImage?.trim()||'');
  const image=$('#seo-social-image');
  image.hidden=!im;image.src=im||'/assets/logo.svg';
+ const faviconPreview=document.querySelector('#seo-favicon-preview');if(faviconPreview){faviconPreview.hidden=!isSitewide;faviconPreview.src=values?.favicon||'/assets/logo.svg';}
 }
 function renderTabs(){
  for(const btn of document.querySelectorAll('[data-seo-tab]'))btn.classList.toggle('selected',btn.dataset.seoTab===tab);

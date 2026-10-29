@@ -6,10 +6,11 @@ export async function onRequestPatch(ctx){
  try{
    const old=await ctx.env.DB.prepare('SELECT id FROM products WHERE id=? AND is_deleted=0').bind(id).first();
    if(!old)return send({ok:false,error:'Không tìm thấy sản phẩm.'},404);
-   const p=normalizeProduct(await parseJson(ctx.request),old);
+   const p=normalizeProduct(await parseJson(ctx.request),old,new Set((await ctx.env.DB.prepare('SELECT slug FROM product_categories WHERE is_deleted=0').all()).results.map(c=>c.slug))); 
    if(p.id!==id)return send({ok:false,error:'Không thể đổi mã sản phẩm. Hãy tạo mã mới nếu cần.'},400);
    await ctx.env.DB.prepare('UPDATE products SET slug=?,name=?,category=?,price=?,old_price=?,badge=?,detail=?,material=?,size=?,image=?,tone=?,is_active=?,is_sample=0,seo_title=?,seo_description=?,updated_at=datetime(\'now\') WHERE id=?')
    .bind(p.slug,p.name,p.category,p.price,p.oldPrice,p.badge,p.detail,p.material,p.size,p.image,p.tone,p.active?1:0,p.seoTitle,p.seoDescription,id).run();
+   await ctx.env.DB.prepare('INSERT OR IGNORE INTO product_category_links(product_id,category_slug) VALUES (?,?)').bind(id,p.category).run();
    await audit(ctx.env,'update',id);
    return send({ok:true,product:p});
  }catch(e){if(/UNIQUE constraint/.test(String(e)))return send({ok:false,error:'Đường dẫn sản phẩm đã được sử dụng.'},409);return send({ok:false,error:e.message||'Không thể sửa sản phẩm.'},400)}

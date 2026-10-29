@@ -1,9 +1,11 @@
+import {initCategoryAdmin,openCategoryAdmin} from './categories-admin.js';
 import {initCms,openCms,hasCmsChanges} from './site-cms.js';
 import {initSeoAdmin,openSeoAdmin,hasSeoChanges} from './seo-admin.js';
 import {initCommerce,openCommerce,closeCommercePanel} from './admin-commerce.js';
 const $ = s => document.querySelector(s);
 const apiBase='/api/admin';
 const categoryNames={'hoa-lua':'Hoa lụa','hoa-cao-su':'Hoa cao su','hoa-decor':'Hoa giả decor'};
+let adminCategories=[];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n||0);
 let csrf='',allProducts=[],editing=null,slugTouched=false,toastTimer;
@@ -17,12 +19,13 @@ async function call(path,options={}){
 }
 function showScreen(authorized){$('#login-screen').hidden=authorized;$('#dashboard').hidden=!authorized}
 async function verifySession(){
- try{const res=await fetch(apiBase+'/session',{cache:'no-store'});const status=await res.json();if(!status.configured){$('#login-hint').textContent='Chưa thiết lập D1 hoặc ADMIN_PASSWORD_HASH trên Cloudflare. Xem README trong bộ mã nguồn.';showScreen(false);return}if(status.authenticated){csrf=status.csrf;showScreen(true);await loadProducts()}else{showScreen(false)}}catch{$('#login-hint').textContent='Không kết nối được API quản trị. Kiểm tra Cloudflare Pages Functions.';showScreen(false)}
+ try{const res=await fetch(apiBase+'/session',{cache:'no-store'});const status=await res.json();if(!status.configured){$('#login-hint').textContent='Chưa thiết lập D1 hoặc ADMIN_PASSWORD_HASH trên Cloudflare. Xem README trong bộ mã nguồn.';showScreen(false);return}if(status.authenticated){csrf=status.csrf;showScreen(true);await loadCategories();await loadProducts()}else{showScreen(false)}}catch{$('#login-hint').textContent='Không kết nối được API quản trị. Kiểm tra Cloudflare Pages Functions.';showScreen(false)}
 }
 async function login(e){e.preventDefault();const b=$('#login-form button');b.disabled=true;$('#login-hint').textContent='Đang xác thực...';try{
- const r=await call('/login',{method:'POST',body:JSON.stringify({password:$('#password').value})});csrf=r.csrf;$('#password').value='';$('#login-hint').textContent='';showScreen(true);await loadProducts();notify('Đăng nhập thành công!');
+ const r=await call('/login',{method:'POST',body:JSON.stringify({password:$('#password').value})});csrf=r.csrf;$('#password').value='';$('#login-hint').textContent='';showScreen(true);await loadCategories();await loadProducts();notify('Đăng nhập thành công!');
  }catch(err){$('#login-hint').textContent=err.message}finally{b.disabled=false}}
 async function logout(){try{await call('/logout',{method:'POST',body:'{}'})}catch{}csrf='';allProducts=[];closeCommercePanel();showScreen(false);notify('Đã đăng xuất')}
+async function loadCategories(){try{const d=await call('/categories',{method:'GET'});adminCategories=d.categories||[];for(const c of adminCategories)categoryNames[c.slug]=c.name;const select=$('#f-category');const selected=select.value;select.replaceChildren(...adminCategories.map(c=>{const opt=document.createElement('option');opt.value=c.slug;opt.textContent=c.name+(c.active?'':' (đang ẩn)');return opt}));if(adminCategories.some(c=>c.slug===selected))select.value=selected;}catch(e){notify('Không tải được danh mục: '+e.message,true)}}
 async function loadProducts(){try{const r=await call('/products',{method:'GET'});allProducts=r.products||[];render()}catch(e){notify(e.message,true)}}
 function render(){
  const s=$('#search').value.trim().toLocaleLowerCase('vi'),f=$('#status-filter').value;
@@ -44,7 +47,7 @@ function nextId(){return 'TH'+Date.now().toString(36).toUpperCase().slice(-7)}
 function openEditor(product){editing=product||null;slugTouched=!!product;$('#editor-title').textContent=product?'Chỉnh sửa sản phẩm':'Thêm sản phẩm mới';
  for(const [k,s] of Object.entries(fields)){
   const input=$(s),val=product?.[k];if(input.type==='checkbox')input.checked=product?Boolean(val):true;
-  else input.value=val??(k==='id'?nextId():k==='category'?'hoa-lua':k==='tone'?'rose':'');
+  else input.value=val??(k==='id'?nextId():k==='category'?(adminCategories.find(c=>c.active)?.slug||'hoa-lua'):k==='tone'?'rose':'');
  }
  $('#f-id').readOnly=!!product;previewImage();$('#editor-backdrop').hidden=false;document.body.style.overflow='hidden';$('#f-name').focus();
 }
@@ -79,21 +82,24 @@ function wire(){
  initCms({call,toast:notify});
  initSeoAdmin({call,toast:notify,getProducts:()=>allProducts,onEditProduct:p=>{openEditor(p);setTimeout(()=>$("#f-seo-title").focus(),0)}});
  initCommerce({call,toast:notify});
+ initCategoryAdmin({call,toast:notify,getProducts:()=>allProducts,reloadProducts:loadProducts});
  let activeView='products';
  const showView=async (view)=>{
   if(activeView==='cms' && view!=='cms' && hasCmsChanges() && !confirm('Có chỉnh sửa chưa lưu. Rời trang nội dung?'))return;
   if(activeView==='seo' && view!=='seo' && hasSeoChanges() && !confirm('Có chỉnh sửa SEO chưa lưu. Rời trang?'))return;
   activeView=view;
-  const views={products:'san-pham',orders:'orders-work',customers:'customers-work',cms:'cms-work',seo:'seo-work'};
+  const views={categories:'categories-work',products:'san-pham',orders:'orders-work',customers:'customers-work',cms:'cms-work',seo:'seo-work'};
   for(const [name,id] of Object.entries(views))document.getElementById(id).hidden=(name!==view);
   document.getElementById('product-stats').hidden=(view!=='products');
-  document.getElementById('admin-heading').textContent=({products:'Danh sách sản phẩm',orders:'Quản lý đơn hàng',customers:'Khách hàng đăng ký nhận tin',cms:'Nội dung website',seo:'Quản lý SEO'})[view];
-  for(const [name,nav] of Object.entries({products:'a[href="#san-pham"]',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms',seo:'#nav-seo'}))document.querySelector(nav).classList.toggle('active',name===view);
+  document.getElementById('admin-heading').textContent=({products:'Danh sách sản phẩm',categories:'Quản lý danh mục',orders:'Quản lý đơn hàng',customers:'Khách hàng đăng ký nhận tin',cms:'Nội dung website',seo:'Quản lý SEO'})[view];
+  for(const [name,nav] of Object.entries({products:'a[href="#san-pham"]',categories:'#nav-categories',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms',seo:'#nav-seo'}))document.querySelector(nav).classList.toggle('active',name===view);
+  if(view==='categories'){await loadProducts();await openCategoryAdmin();}
+  if(view==='products')await loadCategories();
   if(view==='cms')await openCms();
-  if(view==='seo'){await loadProducts();await openSeoAdmin();}
+  if(view==='seo'){await loadCategories();await loadProducts();await openSeoAdmin();}
   if(view==='orders'||view==='customers')await openCommerce(view);
  };
- for(const [view,selector] of Object.entries({products:'a[href="#san-pham"]',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms',seo:'#nav-seo'})){
+ for(const [view,selector] of Object.entries({products:'a[href="#san-pham"]',categories:'#nav-categories',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms',seo:'#nav-seo'})){
   document.querySelector(selector).addEventListener('click',e=>{e.preventDefault();showView(view);});
  }
  document.querySelector('#admin-mobile-view').addEventListener('change',e=>{showView(e.target.value).then(()=>{e.target.value=activeView;});});
@@ -108,4 +114,7 @@ function wire(){
  $('#f-slug').addEventListener('input',()=>{slugTouched=true});$('#f-image').addEventListener('input',previewImage);
  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#editor-backdrop').hidden)closeEditor()});
 }
-wire();verifySession();
+async function syncAdminFavicon(){
+ try{const res=await fetch('/api/site',{cache:'no-store'});const json=await res.json();const icon=document.querySelector('link[rel="icon"]');if(icon&&json.ok){icon.href=json.site?.seo?.favicon||'/assets/logo.svg';}}catch{}
+}
+wire();syncAdminFavicon();verifySession();

@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {DatabaseSync} from 'node:sqlite';
+import {createSession} from '../lib/admin-auth.js';
+import {onRequestPost as addCat} from '../functions/api/admin/categories/index.js';
+import {onRequestPut as saveMembers,onRequestPatch as updateCat,onRequestDelete as deleteCat} from '../functions/api/admin/categories/[slug].js';
+import {onRequestGet as publicCat} from '../functions/danh-muc/[slug].js';
+import {onRequestGet as sitemap} from '../functions/sitemap.xml.js';
+import {onRequestGet as home} from '../functions/index.js';
+import {DEFAULT_SITE} from '../data/site-schema.js';
+import {cleanSection} from '../lib/site-cms.js';
+function setup(){const d=new DatabaseSync(':memory:');for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql'])d.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
+ const DB={prepare(sql){const stmt=d.prepare(sql);let args=[];return {bind(...v){args=v;return this},first(){return Promise.resolve(stmt.get(...args)??null)},all(){return Promise.resolve({results:stmt.all(...args)})},run(){const x=stmt.run(...args);return Promise.resolve({meta:{changes:x.changes}})}}},async batch(qs){d.exec('BEGIN');try{const r=[];for(const x of qs)r.push(await x.run());d.exec('COMMIT');return r}catch(e){d.exec('ROLLBACK');throw e}}};return {d,DB}}
+const credentials=(cookie,csrf,method,url,data)=>new Request('https://hoaluathuhien.shop'+url,{method,headers:{'Content-Type':'application/json',Origin:'https://hoaluathuhien.shop',Cookie:cookie,'X-CSRF-Token':csrf},body:JSON.stringify(data)});
+test('V1.3.8: migration keeps 3 old categories and their product associations',()=>{const {d}=setup();assert.equal(d.prepare('SELECT COUNT(*) n FROM product_categories').get().n,3);assert.ok(d.prepare('SELECT COUNT(*) n FROM product_category_links').get().n>0);});
+test('V1.3.8: create SEO category, assign existing product, indexed in sitemap, remove and delete safely',async()=>{const {d,DB}=setup();const env={DB};const auth=await createSession(env,new Request('https://hoaluathuhien.shop/admin'));const cookie=auth.cookie.split(';')[0];
+ const c={slug:'hoa-phong-khach',name:'Hoa phòng khách',description:'Hoa trang trí phòng khách đẹp',image:'/media/12345678-1234-1234-1234-123456789abc.png',seoTitle:'Hoa phòng khách sang trọng',seoDescription:'Danh mục hoa phòng khách',seoImage:'',active:true};
+ const created=await addCat({env,request:credentials(cookie,auth.csrf,'POST','/api/admin/categories',c)});assert.equal(created.status,201,await created.text());
+ const assigned=await saveMembers({env,params:{slug:c.slug},request:credentials(cookie,auth.csrf,'PUT','/api/admin/categories/'+c.slug,{productIds:['TH001']})});assert.equal(assigned.status,200,await assigned.text());
+ const response=await publicCat({env,params:{slug:c.slug},request:new Request('https://hoaluathuhien.shop/danh-muc/'+c.slug+'/')});assert.equal(response.status,200);const html=await response.text();assert.match(html,/Hoa phòng khách sang trọng/);assert.match(html,/Bó hoa hồng lụa hồng phấn/);
+ // The seed product is a sample, so sitemap category is omitted until marked real.
+ d.prepare("UPDATE products SET is_sample=0 WHERE id='TH001'").run();
+ let xml=await (await sitemap({env})).text();assert.match(xml,/danh-muc\/hoa-phong-khach/);
+ const removed=await saveMembers({env,params:{slug:c.slug},request:credentials(cookie,auth.csrf,'PUT','/api/admin/categories/'+c.slug,{productIds:[]})});assert.equal(removed.status,200,await removed.text());xml=await (await sitemap({env})).text();assert.doesNotMatch(xml,/danh-muc\/hoa-phong-khach/);
+ const deleted=await deleteCat({env,params:{slug:c.slug},request:credentials(cookie,auth.csrf,'DELETE','/api/admin/categories/'+c.slug,{})});assert.equal(deleted.status,200,await deleted.text());assert.equal((await publicCat({env,params:{slug:c.slug},request:new Request('https://hoaluathuhien.shop/danh-muc/'+c.slug+'/')})).status,404);
+});
+test('V1.3.8: global favicon and share image validated and rendered by server',async()=>{const {DB}=setup();const seo={...DEFAULT_SITE.seo,favicon:'/media/12345678-1234-1234-1234-123456789abc.png',defaultShareImage:'/media/12345678-1234-1234-1234-123456789abc.webp',defaultShareTitle:'Hoa trang trí – Ưu đãi',defaultShareDescription:'Hoa lụa, cao su'};
+ assert.equal(cleanSection('seo',seo).favicon,seo.favicon);assert.throws(()=>cleanSection('seo',{...seo,favicon:'javascript:alert(1)'}));
+ await DB.prepare("UPDATE site_cms SET published_json=? WHERE id='home'").bind(JSON.stringify({...DEFAULT_SITE,seo})).run();
+ const assetHTML='<html><head><title>Home</title><link rel="icon" href="/assets/logo.svg"><meta name="description" content="old"><meta property="og:title" content="old"><meta property="og:description" content="old"></head><body></body></html>';
+ const ctx={env:{DB,ASSETS:{fetch:async()=>new Response(assetHTML,{headers:{'content-type':'text/html'}})}},request:new Request('https://hoaluathuhien.shop/')};
+ const html=await (await home(ctx)).text();
+ assert.match(html,/rel="icon" type="image\/png" href="\/media\/12345678/);assert.match(html,/og:image" content="https:\/\/hoaluathuhien.shop\/media\/12345678/);assert.match(html,/og:title" content="Hoa trang trí – Ưu đãi"/);
+});
