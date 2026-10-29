@@ -12,7 +12,7 @@ import {onRequestPatch as changeOrder} from '../functions/api/admin/orders/[id].
 import {createSession} from '../lib/admin-auth.js';
 import {normalizeProduct} from '../lib/catalog.js';
 function setup(){
- const sqlite=new DatabaseSync(':memory:');for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
+ const sqlite=new DatabaseSync(':memory:');for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql','0008_manual_display_sales.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
  const DB={prepare(sql){const stmt=sqlite.prepare(sql);let args=[];return {bind(...values){args=values;return this},first(){return Promise.resolve(stmt.get(...args)??null)},all(){return Promise.resolve({results:stmt.all(...args)})},run(){const result=stmt.run(...args);return Promise.resolve({meta:{changes:result.changes}})}}}};
  return {sqlite,DB};
 }

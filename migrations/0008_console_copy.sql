@@ -1,0 +1,1 @@
+ALTER TABLE products ADD COLUMN display_sold_count INTEGER NOT NULL DEFAULT 0 CHECK(display_sold_count BETWEEN 0 AND 999999999);

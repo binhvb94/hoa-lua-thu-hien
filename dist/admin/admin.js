@@ -9,7 +9,7 @@ let adminCategories=[];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n||0);
 let csrf='',allProducts=[],editing=null,slugTouched=false,toastTimer;
-const fields={id:'#f-id',name:'#f-name',slug:'#f-slug',category:'#f-category',price:'#f-price',oldPrice:'#f-old-price',badge:'#f-badge',detail:'#f-detail',material:'#f-material',size:'#f-size',image:'#f-image',seoTitle:'#f-seo-title',seoDescription:'#f-seo-description',tone:'#f-tone',recommendationMode:'#f-recommendation-mode',active:'#f-active'};
+const fields={id:'#f-id',name:'#f-name',slug:'#f-slug',category:'#f-category',price:'#f-price',oldPrice:'#f-old-price',badge:'#f-badge',detail:'#f-detail',material:'#f-material',size:'#f-size',image:'#f-image',seoTitle:'#f-seo-title',seoDescription:'#f-seo-description',tone:'#f-tone',recommendationMode:'#f-recommendation-mode',displaySoldCount:'#f-display-sold-count',active:'#f-active'};
 function notify(msg,error=false){const t=$('#toast');t.textContent=msg;t.className='show'+(error?' error':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='',4500)}
 async function call(path,options={}){
  let response;try{response=await fetch(apiBase+path,{credentials:'same-origin',cache:'no-store',...options,headers:{...(options.body instanceof FormData?{}:{'Content-Type':'application/json'}),...(options.headers||{}),...(options.method&&options.method!=='GET'?{'X-CSRF-Token':csrf}:{})}})}catch{throw new Error('Không kết nối được máy chủ. Kiểm tra mạng và thử lại.')}
@@ -47,7 +47,7 @@ function nextId(){return 'TH'+Date.now().toString(36).toUpperCase().slice(-7)}
 function openEditor(product){editing=product||null;slugTouched=!!product;$('#editor-title').textContent=product?'Chỉnh sửa sản phẩm':'Thêm sản phẩm mới';
  for(const [k,s] of Object.entries(fields)){
   const input=$(s),val=product?.[k];if(input.type==='checkbox')input.checked=product?Boolean(val):true;
-  else input.value=val??(k==='id'?nextId():k==='category'?(adminCategories.find(c=>c.active)?.slug||'hoa-lua'):k==='tone'?'rose':k==='recommendationMode'?'mixed':'');
+  else input.value=val??(k==='id'?nextId():k==='category'?(adminCategories.find(c=>c.active)?.slug||'hoa-lua'):k==='tone'?'rose':k==='recommendationMode'?'mixed':k==='displaySoldCount'?0:'');
  }
  $('#f-id').readOnly=!!product;previewImage();$('#editor-backdrop').hidden=false;document.body.style.overflow='hidden';$('#f-name').focus();loadReviewModeration(product);
 }
@@ -55,7 +55,7 @@ async function loadReviewModeration(product){
  const section=$('#verified-metrics'),stats=$('#verified-stats'),list=$('#verified-review-list');
  section.hidden=!product;list.replaceChildren();if(!product)return;
  const ratingCounts=product.ratingCounts||{};
- stats.innerHTML=`<strong>Đã bán qua website: ${Number(product.soldCount)||0} (đơn đã giao)</strong><p>${Number(product.reviewCount)||0} đánh giá đã duyệt · Điểm trung bình ${product.reviewCount?Number(product.ratingAverage).toFixed(2).replace('.',','):'–'}/5</p><div class="rating-breakdown">${[5,4,3,2,1].map(star=>`<span>${star} sao: ${Number(ratingCounts[star])||0} người</span>`).join('')}</div>`;
+ stats.innerHTML=`<strong>Đơn đã giao: ${new Intl.NumberFormat('vi-VN').format(Number(product.actualSoldCount)||0)} sản phẩm (thống kê thực)</strong><p>Lượt bán hiển thị: ${new Intl.NumberFormat('vi-VN').format(Number(product.displaySoldCount)||0)} (ADMIN nhập)</p><p>${Number(product.reviewCount)||0} đánh giá đã duyệt · Điểm trung bình ${product.reviewCount?Number(product.ratingAverage).toFixed(2).replace('.',','):'–'}/5</p><div class="rating-breakdown">${[5,4,3,2,1].map(star=>`<span>${star} sao: ${Number(ratingCounts[star])||0} người</span>`).join('')}</div>`;
  try{
   const response=await call(`/reviews?productId=${encodeURIComponent(product.id)}`);
   if(editing?.id!==product.id)return;
@@ -82,7 +82,7 @@ async function uploadImage(e){const input=e.target,file=input.files?.[0];if(!fil
  }catch(err){notify(err.message,true)}finally{input.value='';button.textContent='↑ Tải ảnh từ điện thoại / máy tính';}
 }
 function collect(){const out={};for(const [k,s] of Object.entries(fields)){const v=$(s);out[k]=v.type==='checkbox'?v.checked:v.value.trim()}
- out.id=out.id.toUpperCase();out.price=Number(out.price);out.oldPrice=out.oldPrice?Number(out.oldPrice):null;return out;
+ out.id=out.id.toUpperCase();out.price=Number(out.price);out.oldPrice=out.oldPrice?Number(out.oldPrice):null;out.displaySoldCount=Number(out.displaySoldCount);return out;
 }
 async function saveProduct(e){e.preventDefault();const data=collect(),button=$('#save-product');if(!$('#product-form').reportValidity())return;
  button.disabled=true;button.textContent='Đang lưu...';try{

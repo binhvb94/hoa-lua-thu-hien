@@ -12,7 +12,7 @@ import {onRequestPost as publish} from '../functions/api/admin/site/publish.js';
 
 function createDB(){
  const d=new DatabaseSync(':memory:');
- for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql'])d.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
+ for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql','0008_manual_display_sales.sql'])d.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
  const DB={prepare(sql){const statement=d.prepare(sql);let args=[];return {bind(...v){args=v;return this},first(){return Promise.resolve(statement.get(...args)??null)},all(){return Promise.resolve({results:statement.all(...args)})},run(){const out=statement.run(...args);return Promise.resolve({meta:{changes:out.changes}})}}},async batch(statements){const out=[];for(const s of statements)out.push(await s.run());return out}};
  return {d,DB};
 }

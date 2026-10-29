@@ -1,3 +1,11 @@
+# Hoa Lụa Thu Hiền V1.3.9.1 – Ô lượt bán hiển thị do ADMIN nhập
+
+Trong **Thêm / Sửa sản phẩm** có thêm **Lượt bán hiển thị**. Nhập `4725` → web hiển thị `4.725 lượt bán` tại trang chủ, danh mục, trang SEO sản phẩm và mục Đề xuất. Con số này không tự lấy từ đơn COD; thống kê đơn thật và đánh giá xác thực vẫn độc lập.
+
+**Cần chạy migration `migrations/0008_console_copy.sql` trên Cloudflare D1 một lần trước khi đưa mã nguồn mới lên GitHub.** Đọc `HUONG_DAN_CAP_NHAT_V1_3_9_1.md` để nâng cấp và xem ghi chú về công bố số liệu chính xác.
+
+---
+
 # Hoa Lụa Thu Hiền V1.3.9
 
 Bản nâng cấp từ V1.3.8: **Đề xuất cho bạn** tối đa 8 sản phẩm ở trang chi tiết SEO (bán chạy, đánh giá cao, từ khóa tương tự, kết hợp); hiện số bán **thực tế từ đơn đã giao** và điểm trung bình từ **đánh giá thật của người mua có đơn đã giao**.
