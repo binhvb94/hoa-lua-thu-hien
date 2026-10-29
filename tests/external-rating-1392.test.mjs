@@ -22,11 +22,11 @@ function req(url,auth,method,body){return new Request(host+url,{method,headers:{
 test('external rating breakdown computes average 4.71 and 14 count, separately from verified reviews',()=>{
  assert.equal(roundRating(10*5+4*4,14),4.71);
  const shown=applyTrust({...p},new Map());
- assert.equal(shown.reviewCount,14);assert.equal(shown.ratingAverage,4.71);assert.equal(shown.ratingKind,'manual_external');assert.equal(shown.verifiedReviewCount,0);
+ assert.equal(shown.reviewCount,14);assert.equal(shown.ratingAverage,4.71);assert.equal(shown.ratingKind,'combined');assert.equal(shown.verifiedReviewCount,0);
  assert.equal(shown.ratingCounts[4],4);assert.equal(shown.ratingCounts[5],10);
 });
-test('external aggregate requires a named source and positive integer counts',()=>{
- assert.throws(()=>normalizeProduct({...p,externalRatingSource:''}),/nguồn đánh giá/);
+test('external aggregate may have no displayed source and requires positive integer counts',()=>{
+ assert.equal(normalizeProduct({...p,externalRatingSource:''}).externalRatingSource,'');
  for(const v of [-2,1.5,1000001,'abc'])assert.throws(()=>normalizeProduct({...p,externalRatingCounts:{5:v}}),/Mỗi mức đánh giá/);
  assert.equal(normalizeProduct({...p,externalRatingCounts:{},externalRatingSource:''}).externalRatingCounts[5],0);
 });
@@ -38,12 +38,12 @@ test('admin create/update and public product/category SSR show independently sou
  assert.deepEqual({...stored},{external_rating_5:10,external_rating_4:4,external_rating_source:'Fanpage Hoa Lụa Thu Hiền'});
  const rAdmin=await (await adminList({env,request:new Request(host+'/api/admin/products',{headers:{Cookie:auth.cookie.split(';')[0]}})})).json();
  const adminProduct=rAdmin.products.find(x=>x.id===p.id);
- assert.equal(adminProduct.ratingAverage,4.71);assert.equal(adminProduct.reviewCount,14);assert.equal(adminProduct.ratingKind,'manual_external');
+ assert.equal(adminProduct.ratingAverage,4.71);assert.equal(adminProduct.reviewCount,14);assert.equal(adminProduct.ratingKind,'combined');
  const result=await (await publicList({env})).json();
  assert.equal(result.products.find(x=>x.id===p.id).reviewCount,14);
  const page=await productPage({env,params:{slug:p.slug},request:new Request(host+'/san-pham/'+p.slug+'/')});
  assert.equal(page.status,200);const html=await page.text();
- assert.match(html,/4,71\/5/);assert.match(html,/14 đánh giá tổng hợp từ Fanpage Hoa Lụa Thu Hiền/);
+ assert.match(html,/4,71\/5/);assert.match(html,/14 đánh giá tổng hợp \(website và các kênh khác\)/);
  assert.doesNotMatch(html,/"aggregateRating"/); // shop-imported rating must not masquerade as verified Google reviews
  const cat=await categoryPage({env,params:{slug:'hoa-lua'},request:new Request(host+'/danh-muc/hoa-lua/')});
  assert.match(await cat.text(),/đánh giá tổng hợp/);
