@@ -14,7 +14,7 @@ const host='https://hoaluathuhien.shop';
 const p={id:'REV001',name:'Hoa hồng lụa handmade',slug:'hoa-hong-lua-handmade',category:'hoa-lua',price:152000,image:'https://example.com/a.jpg',active:true,displaySoldCount:4725,externalRatingCounts:{1:0,2:0,3:0,4:4,5:10},externalRatingSource:'Fanpage Hoa Lụa Thu Hiền'};
 function fixture(){
  const sqlite=new DatabaseSync(':memory:');
- for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql','0008_manual_display_sales.sql','0009_external_rating_summary.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
+ for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql','0008_manual_display_sales.sql','0009_external_rating_summary.sql','0010_product_gallery.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
  const DB={prepare(sql){const stmt=sqlite.prepare(sql);let a=[];return {bind(...args){a=args;return this},first(){return Promise.resolve(stmt.get(...a)||null)},all(){return Promise.resolve({results:stmt.all(...a)})},run(){const r=stmt.run(...a);return Promise.resolve({meta:{changes:r.changes}})}}}};
  return {sqlite,DB};
 }

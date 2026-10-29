@@ -90,3 +90,37 @@ document.getElementById('seo-review-form')?.addEventListener('submit',async even
   message.textContent=result.message;form.reset();
  }catch(e){message.textContent=e.message}finally{submit.disabled=false}
 });
+
+// V1.3.9.4 – Gallery ảnh sản phẩm, thumbnail / phóng to / phím / thao tác vuốt.
+(function initProductGallery(){
+ const root=document.getElementById('seo-gallery');if(!root)return;
+ let images=[];try{images=JSON.parse(document.getElementById('seo-gallery-data')?.textContent||'[]')}catch{}
+ if(!Array.isArray(images)||!images.length)return;
+ const main=document.getElementById('seo-gallery-main');const thumbs=[...root.querySelectorAll('[data-gallery-index]')];
+ const lightbox=document.getElementById('seo-lightbox'),large=document.getElementById('seo-lightbox-image');
+ const count=document.getElementById('seo-lightbox-count'),counter=root.querySelector('.seo-gallery-counter');
+ let current=0,lastFocus=null;
+ function setImage(index){
+  current=(index+images.length)%images.length;main.src=images[current];
+  main.alt=`Ảnh sản phẩm ${current+1}/${images.length}`;
+  thumbs.forEach((b,i)=>{b.classList.toggle('selected',i===current);b.setAttribute('aria-pressed',String(i===current))});
+  if(counter&&images.length>1)counter.textContent=`${current+1} / ${images.length} ảnh`;
+  if(!lightbox.hidden){large.src=images[current];large.alt=main.alt;count.textContent=`${current+1} / ${images.length}`;}
+ }
+ function open(){lastFocus=document.activeElement;lightbox.hidden=false;large.src=images[current];large.alt=main.alt;count.textContent=`${current+1} / ${images.length}`;document.body.classList.add('gallery-lightbox-open');lightbox.querySelector('.seo-lightbox-close').focus()}
+ function close(){lightbox.hidden=true;large.removeAttribute('src');document.body.classList.remove('gallery-lightbox-open');lastFocus?.focus?.()}
+ thumbs.forEach((b,i)=>b.addEventListener('click',()=>setImage(i)));
+ root.querySelectorAll('[data-gallery-step]').forEach(b=>b.addEventListener('click',()=>setImage(current+Number(b.dataset.galleryStep))));
+ document.getElementById('seo-gallery-open')?.addEventListener('click',open);
+ lightbox.querySelector('.seo-lightbox-close').addEventListener('click',close);
+ lightbox.querySelector('.seo-lightbox-prev').addEventListener('click',()=>setImage(current-1));
+ lightbox.querySelector('.seo-lightbox-next').addEventListener('click',()=>setImage(current+1));
+ lightbox.addEventListener('click',e=>{if(e.target===lightbox)close()});
+ document.addEventListener('keydown',e=>{
+  if(!lightbox.hidden){if(e.key==='Escape'){e.preventDefault();close()};if(e.key==='ArrowRight')setImage(current+1);if(e.key==='ArrowLeft')setImage(current-1);}
+ });
+ let x=0;for(const element of [root.querySelector('.seo-image'),large]){
+  element?.addEventListener('touchstart',e=>{x=e.changedTouches[0].clientX},{passive:true});
+  element?.addEventListener('touchend',e=>{const diff=e.changedTouches[0].clientX-x;if(Math.abs(diff)>45&&images.length>1)setImage(current+(diff<0?1:-1))},{passive:true});
+ }
+})();

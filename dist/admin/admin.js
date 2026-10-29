@@ -8,7 +8,7 @@ const categoryNames={'hoa-lua':'Hoa lụa','hoa-cao-su':'Hoa cao su','hoa-decor'
 let adminCategories=[];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n||0);
-let csrf='',allProducts=[],editing=null,slugTouched=false,toastTimer;
+let csrf='',allProducts=[],editing=null,slugTouched=false,toastTimer,productGallery=[];
 const fields={id:'#f-id',name:'#f-name',slug:'#f-slug',category:'#f-category',price:'#f-price',oldPrice:'#f-old-price',badge:'#f-badge',detail:'#f-detail',material:'#f-material',size:'#f-size',image:'#f-image',seoTitle:'#f-seo-title',seoDescription:'#f-seo-description',tone:'#f-tone',recommendationMode:'#f-recommendation-mode',displaySoldCount:'#f-display-sold-count',active:'#f-active'};
 function notify(msg,error=false){const t=$('#toast');t.textContent=msg;t.className='show'+(error?' error':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='',4500)}
 async function call(path,options={}){
@@ -51,7 +51,8 @@ function openEditor(product){editing=product||null;slugTouched=!!product;$('#edi
  }
  for(const star of [1,2,3,4,5])$('#f-external-rating-'+star).value=product?.externalRatingCounts?.[star]??0;
  previewExternalRatings();
- $('#f-id').readOnly=!!product;previewImage();$('#editor-backdrop').hidden=false;document.body.style.overflow='hidden';$('#f-name').focus();loadReviewModeration(product);
+ productGallery=[...new Set([product?.image,...(product?.galleryImages||[])].filter(Boolean))];
+ $('#f-id').readOnly=!!product;renderProductGallery();$('#editor-backdrop').hidden=false;document.body.style.overflow='hidden';$('#f-name').focus();loadReviewModeration(product);
 }
 function previewExternalRatings(){
  const values=[1,2,3,4,5].map(star=>Math.max(0,Number($('#f-external-rating-'+star).value)||0));
@@ -77,22 +78,62 @@ async function loadReviewModeration(product){
 async function moderateReview(e){const btn=e.target.closest('[data-review-id]');if(!btn||!editing)return;
  btn.disabled=true;try{await call('/reviews/'+encodeURIComponent(btn.dataset.reviewId),{method:'PATCH',body:JSON.stringify({approved:btn.dataset.approved==='true'})});await loadProducts();const updated=allProducts.find(x=>x.id===editing.id);if(updated){editing=updated;await loadReviewModeration(updated)}notify('Đã cập nhật trạng thái duyệt đánh giá.');}catch(err){notify(err.message,true)}finally{btn.disabled=false}
 }
-function closeEditor(){$('#editor-backdrop').hidden=true;document.body.style.overflow='';$('#product-form').reset();editing=null}
-function previewImage(){const url=$('#f-image').value.trim(),target=$('#image-preview');target.replaceChildren();
- if(url&&(/^https:\/\//i.test(url)||url.startsWith('/media/'))){const img=new Image();img.alt='Xem trước ảnh sản phẩm';img.src=url;img.onerror=()=>{target.textContent='Ảnh chưa có';};target.append(img)}else target.textContent='✿';}
+function closeEditor(){$('#editor-backdrop').hidden=true;document.body.style.overflow='';$('#product-form').reset();editing=null;productGallery=[]}
+function renderProductGallery(){
+ const preview=$('#image-preview'),list=$('#admin-gallery-items');preview.replaceChildren();
+ const cover=$('#f-image').value.trim();if(cover && productGallery[0]!==cover)productGallery=[cover,...productGallery.filter(src=>src!==cover)];
+ if(!cover)preview.textContent='✿';else {const img=new Image();img.src=cover;img.alt='Ảnh đại diện sản phẩm';img.onerror=()=>{preview.textContent='Không xem được ảnh'};preview.append(img)}
+ list.replaceChildren();productGallery.forEach((url,i)=>{
+  const item=document.createElement('div');item.className='admin-gallery-item'+(i===0?' is-cover':'');
+  const pic=new Image();pic.src=url;pic.alt=`Ảnh ${i+1}`;pic.loading='lazy';item.append(pic);
+  const detail=document.createElement('div');detail.className='admin-gallery-detail';
+  const label=document.createElement('strong');label.textContent=i===0?'★ Ảnh bìa':`Ảnh ${i+1}`;detail.append(label);
+  const buttons=document.createElement('div');buttons.className='admin-gallery-buttons';
+  for(const [title,action,disabled] of [['Làm ảnh bìa','cover',i===0],['←','left',i===0],['→','right',i===productGallery.length-1],['Xóa','remove',false]]){
+   const btn=document.createElement('button');btn.type='button';btn.textContent=title;btn.dataset.galleryAction=action;btn.dataset.galleryIndex=i;btn.disabled=disabled;buttons.append(btn)
+  }
+  detail.append(buttons);item.append(detail);list.append(item);
+ });
+ $('#gallery-upload-status').textContent=`${productGallery.length}/12 ảnh · JPG, PNG, WebP · tối đa 5 MB/ảnh. Chọn "Làm ảnh bìa" để đổi ảnh đại diện.`;
+}
+function modifyProductGallery(event){
+ const button=event.target.closest('[data-gallery-action]');if(!button)return;
+ const index=Number(button.dataset.galleryIndex);if(index<0||index>=productGallery.length)return;
+ const action=button.dataset.galleryAction;
+ if(action==='remove'){productGallery.splice(index,1)}
+ if(action==='cover'&&index>0){const [url]=productGallery.splice(index,1);productGallery.unshift(url)}
+ if(action==='left'&&index>0)[productGallery[index-1],productGallery[index]]=[productGallery[index],productGallery[index-1]];
+ if(action==='right'&&index<productGallery.length-1)[productGallery[index+1],productGallery[index]]=[productGallery[index],productGallery[index+1]];
+ $('#f-image').value=productGallery[0]||'';renderProductGallery();
+}
+function previewImage(){
+ const url=$('#f-image').value.trim();if(!url){renderProductGallery();return}
+ productGallery=[url,...productGallery.slice(1).filter(x=>x!==url)];renderProductGallery();
+}
 async function resizeImage(file){if(file.size<=4.8*1024*1024)return file;
  const bitmap=await createImageBitmap(file);const factor=Math.min(1,1800/Math.max(bitmap.width,bitmap.height));
  const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*factor));canvas.height=Math.max(1,Math.round(bitmap.height*factor));canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.82));if(!blob)throw new Error('Không thể xử lý ảnh. Vui lòng chọn ảnh JPG hoặc PNG khác.');return new File([blob],'anh-san-pham.webp',{type:'image/webp'});
 }
-async function uploadImage(e){const input=e.target,file=input.files?.[0];if(!file)return;
- if(!['image/jpeg','image/png','image/webp'].includes(file.type)){notify('Chỉ hỗ trợ JPG, PNG, WebP.',true);input.value='';return;}
- const button=$('.upload-button');button.textContent='Đang tải ảnh...';try{
-  const photo=await resizeImage(file);if(photo.size>5*1024*1024)throw new Error('Ảnh vẫn vượt 5 MB. Vui lòng giảm kích thước ảnh.');
-  const form=new FormData();form.append('image',photo);const r=await call('/upload',{method:'POST',body:form});$('#f-image').value=r.url;previewImage();notify('Ảnh đã được tải lên Cloudflare R2.');
- }catch(err){notify(err.message,true)}finally{input.value='';button.textContent='↑ Tải ảnh từ điện thoại / máy tính';}
+async function uploadImage(e){const input=e.target,files=Array.from(input.files||[]);if(!files.length)return;
+ const remaining=12-productGallery.length;
+ if(files.length>remaining){notify(`Chỉ còn ${remaining} vị trí ảnh trống. Vui lòng chọn ít ảnh hơn.`,true);input.value='';return}
+ const button=$('.upload-button');button.style.pointerEvents='none';
+ try{
+  for(let i=0;i<files.length;i++){
+   const file=files[i];if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error(`Ảnh ${i+1}: chỉ hỗ trợ JPG, PNG, WebP.`);
+   button.textContent=`Đang tải ${i+1}/${files.length} ảnh...`;
+   const photo=await resizeImage(file);if(photo.size>5*1024*1024)throw new Error(`Ảnh ${i+1} vượt 5 MB.`);
+   const form=new FormData();form.append('image',photo);const r=await call('/upload',{method:'POST',body:form});
+   if(!productGallery.includes(r.url))productGallery.push(r.url);
+   $('#f-image').value=productGallery[0]||'';renderProductGallery();
+  }
+  notify(`Đã tải lên ${files.length} ảnh R2. Bấm Lưu sản phẩm để công khai gallery.`);
+ }catch(err){notify(err.message+' Ảnh đã tải lên vẫn ở bộ ảnh; bạn có thể lưu sản phẩm.',true)}
+ finally{input.value='';button.textContent='↑ Tải nhiều ảnh từ điện thoại / máy tính';button.style.pointerEvents='';}
 }
 function collect(){const out={};for(const [k,s] of Object.entries(fields)){const v=$(s);out[k]=v.type==='checkbox'?v.checked:v.value.trim()}
+ out.galleryImages=productGallery.filter((img,i)=>img!==out.image && productGallery.indexOf(img)===i);
  out.id=out.id.toUpperCase();out.price=Number(out.price);out.oldPrice=out.oldPrice?Number(out.oldPrice):null;out.displaySoldCount=Number(out.displaySoldCount);out.externalRatingCounts=Object.fromEntries([1,2,3,4,5].map(star=>[star,Number($('#f-external-rating-'+star).value)]));out.externalRatingSource='';return out;
 }
 async function saveProduct(e){e.preventDefault();const data=collect(),button=$('#save-product');if(!$('#product-form').reportValidity())return;
@@ -136,7 +177,7 @@ function wire(){
  $('#new-product').addEventListener('click',()=>openEditor(null));
  $('#product-list').addEventListener('click',e=>{const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]');if(edit)openEditor(allProducts.find(p=>p.id===edit.dataset.edit));if(del)removeProduct(del.dataset.delete)});
  $('#editor-close').addEventListener('click',closeEditor);$('#editor-cancel').addEventListener('click',closeEditor);
- $('#product-form').addEventListener('submit',saveProduct);$('#verified-review-list').addEventListener('click',moderateReview);$('#upload-image').addEventListener('change',uploadImage);
+ $('#product-form').addEventListener('submit',saveProduct);$('#verified-review-list').addEventListener('click',moderateReview);$('#upload-image').addEventListener('change',uploadImage);$('#admin-gallery-items').addEventListener('click',modifyProductGallery);
  $('#f-name').addEventListener('input',()=>{if(!slugTouched)$('#f-slug').value=slugify($('#f-name').value)});
  $('#f-slug').addEventListener('input',()=>{slugTouched=true});$('#f-image').addEventListener('input',previewImage);
  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#editor-backdrop').hidden)closeEditor()});
