@@ -33,7 +33,7 @@ function fieldNode(key,meta,value){
  else input.type=meta.kind==='number'?'number':meta.kind==='color'?'color':meta.kind==='phone'?'tel':meta.kind==='url'?'url':'text';
  if(meta.kind==='number'){input.min=String(meta.minValue);input.max=String(meta.maxValue);input.step='1';input.inputMode='numeric';}
  if(meta.kind==='color'&&!/^#[\da-f]{6}$/i.test(input.value))input.value='#8d4157';
- if(meta.kind==='image'){
+ if(meta.kind==='image'||meta.kind==='seo-image'){
    input.type='text';input.placeholder='https://... hoặc /media/...';
    const wrap=document.createElement('div');wrap.className='cms-image-picker';
    const img=document.createElement('img');img.alt='Xem trước';img.loading='lazy';img.src=input.value||'/assets/logo.svg';

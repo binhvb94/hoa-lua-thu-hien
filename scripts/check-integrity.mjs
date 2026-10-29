@@ -3,8 +3,9 @@ import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const mustContain={
- 'admin/index.html':['id="nav-orders"','id="nav-customers"','id="orders-work"','id="customers-work"','id="order-detail-backdrop"','id="nav-cms"','Nội dung website','id="cms-work"','id="cms-save"','id="cms-preview"','id="cms-publish"','/admin/admin.js'],
- 'admin/admin.js':["from './admin-commerce.js'","from './site-cms.js'",'initCms({call,toast:notify})','openCms()'],
+ 'admin/index.html':['id="nav-orders"','id="nav-customers"','id="orders-work"','id="customers-work"','id="order-detail-backdrop"','id="nav-cms"','Nội dung website','id="cms-work"','id="cms-save"','id="cms-preview"','id="cms-publish"','id="nav-seo"','id="seo-work"','/admin/admin.js'],
+ 'admin/admin.js':["from './admin-commerce.js'","from './site-cms.js'",'initCms({call,toast:notify})','openCms()','initSeoAdmin','openSeoAdmin()'],
+ 'admin/seo-admin.js':['export function initSeoAdmin','/site/draft','/site/publish','cms_preview=1','seo-product-list'],
  'admin/site-cms.js':['export function initCms','export async function openCms','/site/draft','/site/publish','/site/discard','cms_preview=1'],
  'data/site-schema.js':['fontSizeDesktop','fontSizeMobile','Cỡ chữ','DEFAULT_SITE','SECTIONS','Marketing & Meta Pixel','pixelIds'],
  'site-frontend.js':['fontSizeDesktop','fontSizeMobile','window.SITE_CONFIG.pixelIds'],
@@ -24,7 +25,7 @@ const mustContain={
  'functions/sitemap.xml.js':['sitemap','is_sample=0'],
  'functions/san-pham/[slug].js':['Product','priceCurrency','index, follow','id="seo-add"','/?mo_gio=1'],
  'seo-product.js':['thuhien_cart_v1','AddToCart','ViewContent','seo-quantity'],
- 'functions/danh-muc/[slug].js':['seo-cards'],
+ 'functions/danh-muc/[slug].js':['seo-cards','categorySEO','cms_preview','sessionFromRequest'],
  'lib/seo.js':['metaBlock','canonical','publishedSite'],
  'migrations/0005_product_seo.sql':['seo_title','seo_description'],
  'robots.txt':['Sitemap: https://hoaluathuhien.shop/sitemap.xml']

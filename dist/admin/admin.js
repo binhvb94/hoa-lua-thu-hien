@@ -1,4 +1,5 @@
 import {initCms,openCms,hasCmsChanges} from './site-cms.js';
+import {initSeoAdmin,openSeoAdmin,hasSeoChanges} from './seo-admin.js';
 import {initCommerce,openCommerce,closeCommercePanel} from './admin-commerce.js';
 const $ = s => document.querySelector(s);
 const apiBase='/api/admin';
@@ -68,7 +69,7 @@ function collect(){const out={};for(const [k,s] of Object.entries(fields)){const
 async function saveProduct(e){e.preventDefault();const data=collect(),button=$('#save-product');if(!$('#product-form').reportValidity())return;
  button.disabled=true;button.textContent='Đang lưu...';try{
   const route=editing?`/products/${encodeURIComponent(editing.id)}`:'/products';await call(route,{method:editing?'PATCH':'POST',body:JSON.stringify(data)});
-  const wasEditing=Boolean(editing);closeEditor();await loadProducts();notify(wasEditing?'Đã cập nhật sản phẩm.':'Đã thêm sản phẩm mới.');
+  const wasEditing=Boolean(editing);closeEditor();await loadProducts();if(!$('#seo-work').hidden)await openSeoAdmin();notify(wasEditing?'Đã cập nhật sản phẩm.':'Đã thêm sản phẩm mới.');
  }catch(err){notify(err.message,true)}finally{button.disabled=false;button.textContent='Lưu sản phẩm →'}
 }
 async function removeProduct(id){const p=allProducts.find(x=>x.id===id);if(!p||!confirm(`Xóa "${p.name}" khỏi website và trang quản trị?\n\nĐơn hàng cũ vẫn được giữ. Hành động này không có nút hoàn tác.`))return;
@@ -76,20 +77,23 @@ async function removeProduct(id){const p=allProducts.find(x=>x.id===id);if(!p||!
 }
 function wire(){
  initCms({call,toast:notify});
+ initSeoAdmin({call,toast:notify,getProducts:()=>allProducts,onEditProduct:p=>{openEditor(p);setTimeout(()=>$("#f-seo-title").focus(),0)}});
  initCommerce({call,toast:notify});
  let activeView='products';
  const showView=async (view)=>{
   if(activeView==='cms' && view!=='cms' && hasCmsChanges() && !confirm('Có chỉnh sửa chưa lưu. Rời trang nội dung?'))return;
+  if(activeView==='seo' && view!=='seo' && hasSeoChanges() && !confirm('Có chỉnh sửa SEO chưa lưu. Rời trang?'))return;
   activeView=view;
-  const views={products:'san-pham',orders:'orders-work',customers:'customers-work',cms:'cms-work'};
+  const views={products:'san-pham',orders:'orders-work',customers:'customers-work',cms:'cms-work',seo:'seo-work'};
   for(const [name,id] of Object.entries(views))document.getElementById(id).hidden=(name!==view);
   document.getElementById('product-stats').hidden=(view!=='products');
-  document.getElementById('admin-heading').textContent=({products:'Danh sách sản phẩm',orders:'Quản lý đơn hàng',customers:'Khách hàng đăng ký nhận tin',cms:'Nội dung website'})[view];
-  for(const [name,nav] of Object.entries({products:'a[href="#san-pham"]',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms'}))document.querySelector(nav).classList.toggle('active',name===view);
+  document.getElementById('admin-heading').textContent=({products:'Danh sách sản phẩm',orders:'Quản lý đơn hàng',customers:'Khách hàng đăng ký nhận tin',cms:'Nội dung website',seo:'Quản lý SEO'})[view];
+  for(const [name,nav] of Object.entries({products:'a[href="#san-pham"]',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms',seo:'#nav-seo'}))document.querySelector(nav).classList.toggle('active',name===view);
   if(view==='cms')await openCms();
+  if(view==='seo'){await loadProducts();await openSeoAdmin();}
   if(view==='orders'||view==='customers')await openCommerce(view);
  };
- for(const [view,selector] of Object.entries({products:'a[href="#san-pham"]',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms'})){
+ for(const [view,selector] of Object.entries({products:'a[href="#san-pham"]',orders:'#nav-orders',customers:'#nav-customers',cms:'#nav-cms',seo:'#nav-seo'})){
   document.querySelector(selector).addEventListener('click',e=>{e.preventDefault();showView(view);});
  }
  document.querySelector('#admin-mobile-view').addEventListener('change',e=>{showView(e.target.value).then(()=>{e.target.value=activeView;});});
