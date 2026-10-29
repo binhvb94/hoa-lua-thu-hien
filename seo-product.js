@@ -2,6 +2,8 @@
 // Giữ nguyên dữ liệu sản phẩm do server render, không tính giá từ client khi đặt COD:
 // /api/orders vẫn lấy giá chính thức từ D1.
 const CART_KEY='thuhien_cart_v1';
+const variantKey=values=>values.map(x=>encodeURIComponent(x)).join('|');
+let selectedVariant=null;
 const CONSENT_KEY='thuhien_cookie_consent_v1';
 const button=document.getElementById('seo-add');
 const quantity=document.getElementById('seo-quantity');
@@ -58,17 +60,39 @@ document.getElementById('seo-consent-yes')?.addEventListener('click',()=>setCons
 document.getElementById('seo-consent-no')?.addEventListener('click',()=>setConsent(false));
 document.getElementById('seo-consent-settings')?.addEventListener('click',()=>{consentBox.hidden=false;});
 if(consent()===null&&consentBox)consentBox.hidden=false;
+const variantRoot=document.getElementById('seo-variants');
+let variantConfig=null,selected=[];
+if(variantRoot){try{variantConfig=JSON.parse(document.getElementById('seo-variants-data').textContent)}catch{};
+ if(variantConfig?.axes?.length){selected=variantConfig.axes.map(()=>null);
+  variantRoot.addEventListener('click',e=>{const b=e.target.closest('[data-variant-value]');if(!b||b.disabled)return;selected[Number(b.dataset.variantAxis)]=b.dataset.variantValue;updateSelection()});
+  function updateSelection(){
+   const key=selected.every(Boolean)?variantKey(selected):null;
+   selectedVariant=variantConfig.items.find(v=>v.key===key)||null;
+   variantRoot.querySelectorAll('[data-variant-value]').forEach(b=>b.classList.toggle('selected',selected[Number(b.dataset.variantAxis)]===b.dataset.variantValue));
+   const stock=document.getElementById('seo-stock-status');const price=document.getElementById('seo-price');
+   if(!selectedVariant){stock.textContent='Vui lòng chọn đủ phân loại.';button.disabled=true;return;}
+   price.textContent=new Intl.NumberFormat('vi-VN').format(selectedVariant.price)+' ₫';
+   stock.textContent=selectedVariant.stock>0?`Còn ${selectedVariant.stock.toLocaleString('vi-VN')} sản phẩm`:'Phân loại này đã hết hàng.';
+   button.disabled=selectedVariant.stock<=0;
+   if(selectedVariant.image){const thumb=[...document.querySelectorAll('[data-gallery-index]')].find(t=>t.querySelector('img')?.src===new URL(selectedVariant.image,location.origin).href);if(thumb)thumb.click();else{const img=document.getElementById('seo-gallery-main');if(img)img.src=selectedVariant.image}}
+  }button.disabled=true;
+ }
+}
 button?.addEventListener('click',()=>{
   const n=Number(quantity.value);
   if(!Number.isInteger(n)||n<1||n>20){status.textContent='Vui lòng chọn số lượng từ 1 đến 20.';quantity.focus();return;}
-  const cart=readCart(),previous=cart[button.dataset.id]||0;
+  if(variantConfig?.axes?.length&&!selectedVariant){status.textContent='Hãy chọn phân loại sản phẩm trước.';return;}
+  const lineKey=selectedVariant?button.dataset.id+'@@'+encodeURIComponent(selectedVariant.key):button.dataset.id;
+  const cart=readCart(),previous=cart[lineKey]||0;
   if(previous>=20){status.textContent='Giỏ hàng đã có tối đa 20 sản phẩm này.';return;}
-  const added=Math.min(n,20-previous);
-  cart[button.dataset.id]=previous+added;
+  const available=selectedVariant?.stock??20;
+  if(previous>=available){status.textContent='Số lượng đã đạt tồn kho của phân loại này.';return;}
+  const added=Math.min(n,20-previous,available-previous);
+  cart[lineKey]=previous+added;
   try{localStorage.setItem(CART_KEY,JSON.stringify(cart));}
   catch{status.textContent='Không thể lưu giỏ hàng trên trình duyệt này. Vui lòng thử lại.';return;}
   status.textContent=`Đã thêm ${added} sản phẩm vào giỏ. Bạn có thể xem giỏ hàng và hoàn tất đặt COD.`;
-  const p=Number(button.dataset.price);
+  const p=selectedVariant?.price??Number(button.dataset.price);
   track('AddToCart',{content_ids:[button.dataset.id],content_type:'product',content_name:button.dataset.name,contents:[{id:button.dataset.id,quantity:added,item_price:p}],value:p*added,currency:'VND'});
 });
 void loadPixelConfig();

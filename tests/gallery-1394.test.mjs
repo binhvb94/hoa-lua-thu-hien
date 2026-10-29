@@ -12,7 +12,7 @@ const host='https://hoaluathuhien.shop';
 const sample={id:'GAL001',name:'Hoa lụa Gallery',slug:'hoa-lua-gallery',category:'hoa-lua',price:152000,active:true,detail:'Hoa trang trí',image:'https://example.com/cover.jpg'};
 function fixture(){
  const sqlite=new DatabaseSync(':memory:');
- for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql','0008_manual_display_sales.sql','0009_external_rating_summary.sql','0010_product_gallery.sql'])
+ for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql','0008_manual_display_sales.sql','0009_external_rating_summary.sql','0010_product_gallery.sql','0011_product_variants.sql'])
   sqlite.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
  const DB={prepare(sql){const statement=sqlite.prepare(sql);let args=[];return {bind(...values){args=values;return this},first(){return Promise.resolve(statement.get(...args)??null)},all(){return Promise.resolve({results:statement.all(...args)})},run(){const r=statement.run(...args);return Promise.resolve({meta:{changes:r.changes}})}}}};
  return {sqlite,DB};

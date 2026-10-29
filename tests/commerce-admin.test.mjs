@@ -11,7 +11,7 @@ import {onRequestGet as listCustomers} from '../functions/api/admin/customers/in
 
 function dbFixture(){
  const sqlite=new DatabaseSync(':memory:');
- for(const migration of ['0001_init.sql','0002_catalog_admin.sql','0004_orders_customers_admin.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+migration,import.meta.url),'utf8'));
+ for(const migration of ['0001_init.sql','0002_catalog_admin.sql','0004_orders_customers_admin.sql','0011_product_variants.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+migration,import.meta.url),'utf8'));
  const DB={prepare(sql){let bindings=[];return {bind(...values){bindings=values;return this;},async first(){return sqlite.prepare(sql).get(...bindings)||null;},async all(){return {results:sqlite.prepare(sql).all(...bindings)};},async run(){const m=sqlite.prepare(sql).run(...bindings);return {meta:{changes:m.changes}};}};}};
  return {DB,sqlite};
 }

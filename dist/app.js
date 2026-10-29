@@ -1,3 +1,6 @@
+const parseVariantConfig=raw=>{try{const c=typeof raw==='string'?JSON.parse(raw):raw;return c&&Array.isArray(c.axes)&&Array.isArray(c.items)?c:{axes:[],items:[]}}catch{return {axes:[],items:[]}}};
+const isVariantProduct=c=>Boolean(c?.axes?.length&&c?.items?.length);
+const variantSummary=(item,conf)=>conf.axes.map((axis,i)=>`${axis.name}: ${item.values[i]}`).join(' · ');
 import { products as sampleProducts, categoryNames } from './data/products.js';
 import {loadSiteContent, CMS_PREVIEW} from './site-frontend.js';
 let products = [];
@@ -27,9 +30,19 @@ function readCart() {
     return output;
   } catch { return {}; }
 }
-const cartItems = () => Object.entries(cart).map(([id, quantity]) => ({ product: productById(id), quantity })).filter(x => x.product);
+const CART_VARIANT_SEP='@@';
+const cartKey=(id,key='')=>key?`${id}${CART_VARIANT_SEP}${encodeURIComponent(key)}`:id;
+function cartParts(key){const at=key.indexOf(CART_VARIANT_SEP);if(at<0)return {id:key,variantKey:''};try{return {id:key.slice(0,at),variantKey:decodeURIComponent(key.slice(at+CART_VARIANT_SEP.length))}}catch{return {id:'',variantKey:''}}}
+const variantFor=(p,key)=>parseVariantConfig(p?.variantConfig).items.find(item=>item.key===key);
+const cartItems = () => Object.entries(cart).map(([key,quantity])=>{
+ const {id,variantKey}=cartParts(key),product=productById(id);
+ if(!product)return null;
+ const conf=parseVariantConfig(product.variantConfig),variants=isVariantProduct(conf),variant=variants?variantFor(product,variantKey):null;
+ if(variants&&!variant||!variants&&variantKey)return null;
+ return {key,product,variant,variantKey,quantity,price:variant?variant.price:product.price,photo:variant?.image||product.image,label:variant?variantSummary(variant,conf):''};
+}).filter(Boolean);
 const cartCount = () => cartItems().reduce((n, item) => n + item.quantity, 0);
-const cartTotal = () => cartItems().reduce((n, item) => n + item.product.price * item.quantity, 0);
+const cartTotal = () => cartItems().reduce((n, item) => n + item.price * item.quantity, 0);
 const pixelReady = () => pixelInitialized && typeof window.fbq === 'function';
 
 function loadPixel() {
@@ -57,7 +70,7 @@ function productParams(p, qty = 1) {
   return {content_ids:[p.id], content_type:'product', content_name:p.name, contents:[{id:p.id,quantity:qty,item_price:p.price}], value:p.price*qty, currency:'VND'};
 }
 function cartParams() {
-  return {content_ids:cartItems().map(i=>i.product.id), content_type:'product', contents:cartItems().map(i=>({id:i.product.id,quantity:i.quantity,item_price:i.product.price})), num_items:cartCount(), value:cartTotal(), currency:'VND'};
+  return {content_ids:cartItems().map(i=>i.product.id), content_type:'product', contents:cartItems().map(i=>({id:i.product.id,quantity:i.quantity,item_price:i.price})), num_items:cartCount(), value:cartTotal(), currency:'VND'};
 }
 function currentConsent() { return localStorage.getItem(consentKey); }
 function setConsent(value) {
@@ -93,7 +106,7 @@ function renderProducts() {
   $('#product-grid').innerHTML = listing.map(p => `<article class="product-card">
     <div class="product-img-wrap tone-${p.tone}" data-view="${p.id}" role="link" tabindex="0" aria-label="Mở trang sản phẩm ${safeText(p.name)}"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.03'" />${p.badge ? `<span class="product-tag">${safeText(p.badge)}</span>` : ''}
       <div class="product-card-actions"><button class="quick-view" data-view="${p.id}" type="button">Xem chi tiết</button><button class="quick-add" data-add="${p.id}" type="button">+ Thêm giỏ</button></div></div>
-    <div class="product-info"><span class="product-category">${safeText(categoryNames[p.category]||p.category)}</span><a class="product-name" href="/san-pham/${encodeURIComponent(p.slug)}/">${safeText(p.name)}</a><div class="product-price">${money(p.price)} ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>`:''}</div><div class="product-trust-inline">${p.reviewCount?`<span><span class="star-meter" aria-hidden="true"><span>★★★★★</span><b style="width:${Math.round(p.ratingAverage*20)}%">★★★★★</b></span> <b>${p.ratingAverage.toFixed(2).replace('.',',')}/5</b> (${p.reviewCount} đánh giá${p.ratingKind==='combined'?' tổng hợp':''})</span>`:''}${p.soldCount?`<span class="sold">${new Intl.NumberFormat('vi-VN').format(p.soldCount)} lượt bán</span>`:''}</div></div>
+    <div class="product-info"><span class="product-category">${safeText(categoryNames[p.category]||p.category)}</span><a class="product-name" href="/san-pham/${encodeURIComponent(p.slug)}/">${safeText(p.name)}</a><div class="product-price">${money(isVariantProduct(parseVariantConfig(p.variantConfig))?Math.min(...parseVariantConfig(p.variantConfig).items.map(x=>x.price)):p.price)} ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>`:''}</div><div class="product-trust-inline">${p.reviewCount?`<span><span class="star-meter" aria-hidden="true"><span>★★★★★</span><b style="width:${Math.round(p.ratingAverage*20)}%">★★★★★</b></span> <b>${p.ratingAverage.toFixed(2).replace('.',',')}/5</b> (${p.reviewCount} đánh giá${p.ratingKind==='combined'?' tổng hợp':''})</span>`:''}${p.soldCount?`<span class="sold">${new Intl.NumberFormat('vi-VN').format(p.soldCount)} lượt bán</span>`:''}</div></div>
   </article>`).join('');
 }
 function setFilter(nextFilter) {
@@ -108,11 +121,12 @@ function renderCart() {
   $('#cart-count-title').textContent = `(${count})`;
   $('#cart-subtotal').textContent = money(cartTotal());
   $('#checkout-button').disabled = !count;
-  $('#cart-lines').innerHTML = count ? cartItems().map(({product:p,quantity})=>`<div class="cart-line"><img src="${safeText(p.image)}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.05'"><div><h4>${safeText(p.name)}</h4><strong>${money(p.price)}</strong><div class="qty-control"><button data-qty="${p.id}" data-change="-1" aria-label="Giảm số lượng ${safeText(p.name)}">−</button><span>${quantity}</span><button data-qty="${p.id}" data-change="1" aria-label="Tăng số lượng ${safeText(p.name)}">+</button></div></div><button class="remove-item" data-remove="${p.id}" aria-label="Xóa ${safeText(p.name)}">×</button></div>`).join(''):'<div class="cart-empty"><span>✿</span><strong>Giỏ hoa còn trống</strong><p>Thêm vài nhành hoa xinh vào giỏ nhé!</p></div>';
+  $('#cart-lines').innerHTML = count ? cartItems().map(({product:p,quantity,key,price,photo,label})=>`<div class="cart-line"><img src="${safeText(photo)}" alt="${safeText(p.name)}" loading="lazy" onerror="this.style.opacity='.05'"><div><h4>${safeText(p.name)}</h4><strong>${money(price)}</strong>${label?`<small class="cart-variant-label">${safeText(label)}</small>`:''}<div class="qty-control"><button data-qty="${safeText(key)}" data-change="-1" aria-label="Giảm số lượng ${safeText(p.name)}">−</button><span>${quantity}</span><button data-qty="${safeText(key)}" data-change="1" aria-label="Tăng số lượng ${safeText(p.name)}">+</button></div></div><button class="remove-item" data-remove="${safeText(key)}" aria-label="Xóa ${safeText(p.name)}">×</button></div>`).join(''):'<div class="cart-empty"><span>✿</span><strong>Giỏ hoa còn trống</strong><p>Thêm vài nhành hoa xinh vào giỏ nhé!</p></div>';
 }
 function addToCart(id, qty=1) {
   const product=productById(id);
   if (!product) return;
+  if(isVariantProduct(parseVariantConfig(product.variantConfig))){openProduct(id);return;}
   const previous=cart[id] || 0;
   const newQuantity=Math.min(20,previous+qty);
   if (newQuantity <= previous) return;
@@ -125,7 +139,11 @@ function addToCart(id, qty=1) {
 function changeQty(id, delta) {
   if(!cart[id]) return;
   const next=cart[id]+delta;
-  if(next<=0) delete cart[id]; else cart[id]=Math.min(20,next);
+  if(next<=0)delete cart[id];else{
+    const info=cartParts(id),v=variantFor(productById(info.id),info.variantKey);
+    const max=v?Math.min(20,v.stock):20;
+    cart[id]=Math.min(max,next);
+  }
   pendingOrderKey = null;
   renderCart();
 }
@@ -179,7 +197,7 @@ function scrollToSection(id) {
 }
 function startCheckout() {
   if(!cartCount()) return;
-  $('#checkout-summary-lines').innerHTML=cartItems().map(({product:p,quantity})=>`<div class="summary-item"><img src="${safeText(p.image)}" alt="" onerror="this.style.opacity='.05'"><span><strong>${safeText(p.name)}</strong><small>Số lượng: ${quantity}</small></span><b>${money(p.price*quantity)}</b></div>`).join('');
+  $('#checkout-summary-lines').innerHTML=cartItems().map(({product:p,quantity,price,photo,label})=>`<div class="summary-item"><img src="${safeText(photo)}" alt="" onerror="this.style.opacity='.05'"><span><strong>${safeText(p.name)}</strong><small>${label?safeText(label)+" · ":""}Số lượng: ${quantity}</small></span><b>${money(price*quantity)}</b></div>`).join('');
   $('#checkout-total').textContent=money(cartTotal());
   $('#order-status').textContent='';
   track('InitiateCheckout',cartParams());
@@ -200,7 +218,7 @@ async function submitOrder(evt) {
   if (cfg.previewMode) { status.textContent='Bản xem trước chưa tiếp nhận đơn hàng. Vui lòng nhắn Fanpage để được tư vấn.'; status.className='form-status error'; return; }
   if(!form.reportValidity() || !cartCount()) return;
   if(!pendingOrderKey) pendingOrderKey=(crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`);
-  const payload={name:$('#order-name').value.trim(),phone:$('#order-phone').value.trim(),address:$('#order-address').value.trim(),note:$('#order-note').value.trim(),payment_method:'cod',items:cartItems().map(({product:p,quantity})=>({id:p.id,quantity}))};
+  const payload={name:$('#order-name').value.trim(),phone:$('#order-phone').value.trim(),address:$('#order-address').value.trim(),note:$('#order-note').value.trim(),payment_method:'cod',items:cartItems().map(({product:p,quantity,variantKey})=>({id:p.id,quantity,...(variantKey?{variantKey}:{})}))};
   const eventDetails=cartParams();
   button.disabled=true;
   status.textContent='Đang ghi nhận đơn hàng...'; status.className='form-status';
@@ -308,7 +326,7 @@ async function loadCatalog(){
     if(label)label.textContent=cfg.previewMode?'* Chưa kết nối D1; đang hiển thị dữ liệu minh họa.':'Không thể tải danh mục sản phẩm. Vui lòng liên hệ cửa hàng.';
     console.warn('Product catalog:',e);
   }
-  cart=Object.fromEntries(Object.entries(cart).filter(([id])=>products.some(p=>p.id===id)));
+  cart=Object.fromEntries(Object.entries(cart).filter(([id])=>(()=>{const parts=cartParts(id),p=productById(parts.id);if(!p)return false;const v=isVariantProduct(parseVariantConfig(p.variantConfig));return v?Boolean(variantFor(p,parts.variantKey)):!parts.variantKey;})()));
   renderProducts();renderCart();
 }
 async function init(){

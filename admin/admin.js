@@ -1,3 +1,4 @@
+import {initVariantEditor,openVariantEditor,collectVariants,refreshVariantImages} from './product-variants.js';
 import {initCategoryAdmin,openCategoryAdmin} from './categories-admin.js';
 import {initCms,openCms,hasCmsChanges} from './site-cms.js';
 import {initSeoAdmin,openSeoAdmin,hasSeoChanges} from './seo-admin.js';
@@ -51,6 +52,7 @@ function openEditor(product){editing=product||null;slugTouched=!!product;$('#edi
  }
  for(const star of [1,2,3,4,5])$('#f-external-rating-'+star).value=product?.externalRatingCounts?.[star]??0;
  previewExternalRatings();
+ openVariantEditor(product);
  productGallery=[...new Set([product?.image,...(product?.galleryImages||[])].filter(Boolean))];
  $('#f-id').readOnly=!!product;renderProductGallery();$('#editor-backdrop').hidden=false;document.body.style.overflow='hidden';$('#f-name').focus();loadReviewModeration(product);
 }
@@ -94,6 +96,7 @@ function renderProductGallery(){
   }
   detail.append(buttons);item.append(detail);list.append(item);
  });
+ refreshVariantImages();
  $('#gallery-upload-status').textContent=`${productGallery.length}/12 ảnh · JPG, PNG, WebP · tối đa 5 MB/ảnh. Chọn "Làm ảnh bìa" để đổi ảnh đại diện.`;
 }
 function modifyProductGallery(event){
@@ -134,9 +137,9 @@ async function uploadImage(e){const input=e.target,files=Array.from(input.files|
 }
 function collect(){const out={};for(const [k,s] of Object.entries(fields)){const v=$(s);out[k]=v.type==='checkbox'?v.checked:v.value.trim()}
  out.galleryImages=productGallery.filter((img,i)=>img!==out.image && productGallery.indexOf(img)===i);
- out.id=out.id.toUpperCase();out.price=Number(out.price);out.oldPrice=out.oldPrice?Number(out.oldPrice):null;out.displaySoldCount=Number(out.displaySoldCount);out.externalRatingCounts=Object.fromEntries([1,2,3,4,5].map(star=>[star,Number($('#f-external-rating-'+star).value)]));out.externalRatingSource='';return out;
+ out.id=out.id.toUpperCase();out.price=Number(out.price);out.oldPrice=out.oldPrice?Number(out.oldPrice):null;out.displaySoldCount=Number(out.displaySoldCount);out.externalRatingCounts=Object.fromEntries([1,2,3,4,5].map(star=>[star,Number($('#f-external-rating-'+star).value)]));out.externalRatingSource='';out.variantConfig=collectVariants();if(out.variantConfig.items.length){out.price=Math.min(...out.variantConfig.items.map(item=>item.price));}return out;
 }
-async function saveProduct(e){e.preventDefault();const data=collect(),button=$('#save-product');if(!$('#product-form').reportValidity())return;
+async function saveProduct(e){e.preventDefault();const data=collect(),button=$('#save-product');if(data.variantConfig.items.length){$('#f-price').value=String(data.price);}if(!$('#product-form').reportValidity())return;
  button.disabled=true;button.textContent='Đang lưu...';try{
   const route=editing?`/products/${encodeURIComponent(editing.id)}`:'/products';await call(route,{method:editing?'PATCH':'POST',body:JSON.stringify(data)});
   const wasEditing=Boolean(editing);closeEditor();await loadProducts();if(!$('#seo-work').hidden)await openSeoAdmin();notify(wasEditing?'Đã cập nhật sản phẩm.':'Đã thêm sản phẩm mới.');
@@ -147,6 +150,7 @@ async function removeProduct(id){const p=allProducts.find(x=>x.id===id);if(!p||!
 }
 function wire(){
  for(const star of [1,2,3,4,5])$('#f-external-rating-'+star).addEventListener('input',previewExternalRatings);
+ initVariantEditor({call,toast:notify,resizeImage});
  initCms({call,toast:notify});
  initSeoAdmin({call,toast:notify,getProducts:()=>allProducts,onEditProduct:p=>{openEditor(p);setTimeout(()=>$("#f-seo-title").focus(),0)}});
  initCommerce({call,toast:notify});

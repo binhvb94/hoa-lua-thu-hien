@@ -37,7 +37,7 @@ async function viewOrder(id){
   const r=await api('/orders/'+encodeURIComponent(id),{method:'GET'});currentOrder=r.order;
   $('#order-detail-heading').textContent='Đơn '+r.order.order_code;
   const o=r.order;
-  const lines=o.items.map(i=>`<tr><td>${esc(i.name||i.id)}</td><td>${Number(i.quantity)||0}</td><td>${money(i.price)}</td><td>${money(i.line_total)}</td></tr>`).join('');
+  const lines=o.items.map(i=>`<tr><td>${esc(i.name||i.id)}${i.variantName?`<small class="commerce-sub">${esc(i.variantName)}${i.sku?` · SKU: ${esc(i.sku)}`:""}</small>`:""}</td><td>${Number(i.quantity)||0}</td><td>${money(i.price)}</td><td>${money(i.line_total)}</td></tr>`).join('');
   $('#order-detail-body').innerHTML=`
    <div class="order-detail-group"><h3>Thông tin khách đặt</h3><dl><dt>Họ tên</dt><dd>${esc(o.customer_name)}</dd><dt>Số điện thoại</dt><dd>${esc(o.phone)}</dd><dt>Địa chỉ giao hàng</dt><dd>${esc(o.address)}</dd><dt>Ghi chú</dt><dd>${esc(o.note||'Không có')}</dd></dl></div>
    <div class="order-detail-group"><h3>Thông tin đơn hàng</h3><dl><dt>Mã đơn</dt><dd>${esc(o.order_code)}</dd><dt>Ngày đặt</dt><dd>${esc(timeText(o.created_at))}</dd><dt>Thanh toán</dt><dd>${o.payment_method==='cod'?'COD – Thanh toán khi nhận hàng':esc(o.payment_method)}</dd></dl></div>
