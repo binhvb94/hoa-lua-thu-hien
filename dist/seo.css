@@ -14,3 +14,23 @@
 
 /* V1.3.9.5 – option selectors on SEO product page */
 .seo-variants{padding:18px 0;border-top:1px solid #eadfe2;margin:20px 0}.seo-variants h3{font:500 19px 'Playfair Display',serif;margin:0 0 15px}.seo-variant-axis{border:0;padding:0;margin:12px 0}.seo-variant-axis legend{font-size:13px;font-weight:700;padding:0 0 8px}.seo-variant-options{display:flex;gap:10px;flex-wrap:wrap}.seo-option{background:white;border:1px solid #d6c4cc;border-radius:7px;color:#614d55;padding:11px 15px;cursor:pointer;min-width:60px}.seo-option.selected{border:2px solid #8a3855;color:#8a3855;background:#fff4f8;font-weight:700}.seo-option:disabled{opacity:.35;cursor:not-allowed}.seo-variants #seo-stock-status{font-size:12px;color:#8d5968;margin:12px 0 0}.cart-variant-label{display:block;color:#a47583;font-size:11px;margin:4px 0}
+.seo-product-description{
+  margin-top:34px;
+  padding:28px 0;
+  border-top:1px solid #ebdadd;
+}
+
+.seo-product-description h2{
+  font:400 28px 'Playfair Display', serif;
+  margin:0 0 14px;
+  color:#46363b;
+}
+
+.seo-product-description .desc{
+  font-size:16px;
+  line-height:1.9;
+  color:#64585b;
+  max-width:1000px;
+  margin:0;
+  white-space:pre-line;
+}
