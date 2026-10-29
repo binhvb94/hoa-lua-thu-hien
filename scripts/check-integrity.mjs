@@ -3,8 +3,8 @@ import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const mustContain={
- 'admin/index.html':['id="nav-categories"','id="categories-work"','id="seo-favicon-preview"','data-seo-tab="sitewide"','id="nav-orders"','id="nav-customers"','id="orders-work"','id="customers-work"','id="order-detail-backdrop"','id="nav-cms"','Nội dung website','id="cms-work"','id="cms-save"','id="cms-preview"','id="cms-publish"','id="nav-seo"','id="seo-work"','/admin/admin.js'],
- 'admin/admin.js':["from './categories-admin.js'","from './admin-commerce.js'","from './site-cms.js'",'initCms({call,toast:notify})','openCms()','initSeoAdmin','openSeoAdmin()'],
+ 'admin/index.html':['id="f-recommendation-mode"','id="verified-metrics"','id="nav-categories"','id="categories-work"','id="seo-favicon-preview"','data-seo-tab="sitewide"','id="nav-orders"','id="nav-customers"','id="orders-work"','id="customers-work"','id="order-detail-backdrop"','id="nav-cms"','Nội dung website','id="cms-work"','id="cms-save"','id="cms-preview"','id="cms-publish"','id="nav-seo"','id="seo-work"','/admin/admin.js'],
+ 'admin/admin.js':['loadReviewModeration',"from './categories-admin.js'","from './admin-commerce.js'","from './site-cms.js'",'initCms({call,toast:notify})','openCms()','initSeoAdmin','openSeoAdmin()'],
  'admin/seo-admin.js':['export function initSeoAdmin','/site/draft','/site/publish','cms_preview=1','seo-product-list'],
  'admin/site-cms.js':['export function initCms','export async function openCms','/site/draft','/site/publish','/site/discard','cms_preview=1'],
  'data/site-schema.js':['favicon','defaultShareImage','defaultShareTitle','defaultShareDescription','fontSizeDesktop','fontSizeMobile','Cỡ chữ','DEFAULT_SITE','SECTIONS','Marketing & Meta Pixel','pixelIds'],
@@ -33,6 +33,10 @@ const mustContain={
  'functions/api/admin/categories/[slug].js':['onRequestPatch','onRequestPut','onRequestDelete'],
  'functions/api/categories.js':['allCategories'],
  'migrations/0006_categories.sql':['product_categories','product_category_links'],
+ 'migrations/0007_verified_metrics_reviews.sql':['product_reviews','recommendation_mode'],
+ 'functions/api/reviews.js':['onRequestPost','order_code','delivered'],
+ 'lib/product-trust.js':['productTrustMap','recommendProducts'],
+ 'functions/san-pham/[slug].js':['Đề xuất cho bạn','seo-review-form','aggregateRating'],
  'robots.txt':['Sitemap: https://hoaluathuhien.shop/sitemap.xml']
 };
 export async function checkCmsIntegrity(){

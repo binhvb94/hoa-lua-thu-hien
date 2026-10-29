@@ -9,7 +9,7 @@ import {onRequestGet as sitemapRoute} from '../functions/sitemap.xml.js';
 import {normalizeProduct,productColumns} from '../lib/catalog.js';
 
 const db=new DatabaseSync(':memory:');
-for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql'])db.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
+for(const f of ['0001_init.sql','0002_catalog_admin.sql','0003_site_cms.sql','0004_orders_customers_admin.sql','0005_product_seo.sql','0006_categories.sql','0007_verified_metrics_reviews.sql'])db.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
 db.exec("UPDATE products SET is_sample=0 WHERE id='TH001'; UPDATE products SET is_active=0 WHERE id='TH002'; UPDATE products SET is_deleted=1 WHERE id='TH003';");
 const DB={prepare(sql){const statement=db.prepare(sql);let args=[];return {bind(...values){args=values;return this},first(){return Promise.resolve(statement.get(...args)??null)},all(){return Promise.resolve({results:statement.all(...args)})},run(){return Promise.resolve(statement.run(...args))}}}};
 const env={DB,ASSETS:{fetch:async()=>new Response(readFileSync(new URL('../index.html',import.meta.url),'utf8'),{headers:{'content-type':'text/html'}})}};

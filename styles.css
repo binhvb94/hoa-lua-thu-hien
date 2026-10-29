@@ -32,3 +32,8 @@ a.product-name{display:inline-block;color:inherit;text-decoration:none}a.product
 
 /* Dynamic categories in V1.3.8 */
 .category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.filter-tabs{flex-wrap:wrap}.category-card{min-width:0}@media(min-width:801px){.category-grid:has(> :nth-child(4)){grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}}@media(max-width:560px){.category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V1.3.9: minh bạch số lượng bán & đánh giá thực tế */
+.product-trust-inline{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding-top:7px;color:#85656e;font-size:11px;line-height:1.5}.product-trust-inline .stars{color:#dfa922;letter-spacing:1px}.product-trust-inline b{font-weight:600}.product-trust-inline .sold{color:#806f76}
+
+.star-meter{position:relative;display:inline-block;white-space:nowrap;font-size:15px;letter-spacing:1px;color:#d1c5c6;line-height:1.2}.star-meter>b{position:absolute;top:0;left:0;white-space:nowrap;overflow:hidden;color:#e2aa23;font-size:inherit;letter-spacing:inherit;font-weight:inherit;line-height:inherit}

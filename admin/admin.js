@@ -9,7 +9,7 @@ let adminCategories=[];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n||0);
 let csrf='',allProducts=[],editing=null,slugTouched=false,toastTimer;
-const fields={id:'#f-id',name:'#f-name',slug:'#f-slug',category:'#f-category',price:'#f-price',oldPrice:'#f-old-price',badge:'#f-badge',detail:'#f-detail',material:'#f-material',size:'#f-size',image:'#f-image',seoTitle:'#f-seo-title',seoDescription:'#f-seo-description',tone:'#f-tone',active:'#f-active'};
+const fields={id:'#f-id',name:'#f-name',slug:'#f-slug',category:'#f-category',price:'#f-price',oldPrice:'#f-old-price',badge:'#f-badge',detail:'#f-detail',material:'#f-material',size:'#f-size',image:'#f-image',seoTitle:'#f-seo-title',seoDescription:'#f-seo-description',tone:'#f-tone',recommendationMode:'#f-recommendation-mode',active:'#f-active'};
 function notify(msg,error=false){const t=$('#toast');t.textContent=msg;t.className='show'+(error?' error':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='',4500)}
 async function call(path,options={}){
  let response;try{response=await fetch(apiBase+path,{credentials:'same-origin',cache:'no-store',...options,headers:{...(options.body instanceof FormData?{}:{'Content-Type':'application/json'}),...(options.headers||{}),...(options.method&&options.method!=='GET'?{'X-CSRF-Token':csrf}:{})}})}catch{throw new Error('Không kết nối được máy chủ. Kiểm tra mạng và thử lại.')}
@@ -47,9 +47,24 @@ function nextId(){return 'TH'+Date.now().toString(36).toUpperCase().slice(-7)}
 function openEditor(product){editing=product||null;slugTouched=!!product;$('#editor-title').textContent=product?'Chỉnh sửa sản phẩm':'Thêm sản phẩm mới';
  for(const [k,s] of Object.entries(fields)){
   const input=$(s),val=product?.[k];if(input.type==='checkbox')input.checked=product?Boolean(val):true;
-  else input.value=val??(k==='id'?nextId():k==='category'?(adminCategories.find(c=>c.active)?.slug||'hoa-lua'):k==='tone'?'rose':'');
+  else input.value=val??(k==='id'?nextId():k==='category'?(adminCategories.find(c=>c.active)?.slug||'hoa-lua'):k==='tone'?'rose':k==='recommendationMode'?'mixed':'');
  }
- $('#f-id').readOnly=!!product;previewImage();$('#editor-backdrop').hidden=false;document.body.style.overflow='hidden';$('#f-name').focus();
+ $('#f-id').readOnly=!!product;previewImage();$('#editor-backdrop').hidden=false;document.body.style.overflow='hidden';$('#f-name').focus();loadReviewModeration(product);
+}
+async function loadReviewModeration(product){
+ const section=$('#verified-metrics'),stats=$('#verified-stats'),list=$('#verified-review-list');
+ section.hidden=!product;list.replaceChildren();if(!product)return;
+ const ratingCounts=product.ratingCounts||{};
+ stats.innerHTML=`<strong>Đã bán qua website: ${Number(product.soldCount)||0} (đơn đã giao)</strong><p>${Number(product.reviewCount)||0} đánh giá đã duyệt · Điểm trung bình ${product.reviewCount?Number(product.ratingAverage).toFixed(2).replace('.',','):'–'}/5</p><div class="rating-breakdown">${[5,4,3,2,1].map(star=>`<span>${star} sao: ${Number(ratingCounts[star])||0} người</span>`).join('')}</div>`;
+ try{
+  const response=await call(`/reviews?productId=${encodeURIComponent(product.id)}`);
+  if(editing?.id!==product.id)return;
+  const reviews=response.reviews||[];
+  list.innerHTML=reviews.length?reviews.map(r=>`<div class="moderation-row"><div><strong><span class="moderation-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></strong><span>${esc(r.order_code)} · ${esc(r.created_at)} · ${r.is_approved?'Đã duyệt':'Chưa duyệt'}</span><small>${esc(r.comment||'Không có nhận xét')}</small>${r.order_status!=='delivered'?'<small>Đơn không còn ở trạng thái đã giao</small>':''}</div><button type="button" class="ghost review-moderate" data-review-id="${esc(r.id)}" data-approved="${r.is_approved?'false':'true'}" ${r.order_status!=='delivered'?'disabled':''}>${r.is_approved?'Ẩn đánh giá':'Duyệt đánh giá'}</button></div>`).join(''):'<p class="verified-none">Sản phẩm chưa có đánh giá từ khách đã nhận hàng.</p>';
+ }catch(e){list.textContent='Chưa tải được đánh giá: '+e.message}
+}
+async function moderateReview(e){const btn=e.target.closest('[data-review-id]');if(!btn||!editing)return;
+ btn.disabled=true;try{await call('/reviews/'+encodeURIComponent(btn.dataset.reviewId),{method:'PATCH',body:JSON.stringify({approved:btn.dataset.approved==='true'})});await loadProducts();const updated=allProducts.find(x=>x.id===editing.id);if(updated){editing=updated;await loadReviewModeration(updated)}notify('Đã cập nhật trạng thái duyệt đánh giá.');}catch(err){notify(err.message,true)}finally{btn.disabled=false}
 }
 function closeEditor(){$('#editor-backdrop').hidden=true;document.body.style.overflow='';$('#product-form').reset();editing=null}
 function previewImage(){const url=$('#f-image').value.trim(),target=$('#image-preview');target.replaceChildren();
@@ -109,7 +124,7 @@ function wire(){
  $('#new-product').addEventListener('click',()=>openEditor(null));
  $('#product-list').addEventListener('click',e=>{const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]');if(edit)openEditor(allProducts.find(p=>p.id===edit.dataset.edit));if(del)removeProduct(del.dataset.delete)});
  $('#editor-close').addEventListener('click',closeEditor);$('#editor-cancel').addEventListener('click',closeEditor);
- $('#product-form').addEventListener('submit',saveProduct);$('#upload-image').addEventListener('change',uploadImage);
+ $('#product-form').addEventListener('submit',saveProduct);$('#verified-review-list').addEventListener('click',moderateReview);$('#upload-image').addEventListener('change',uploadImage);
  $('#f-name').addEventListener('input',()=>{if(!slugTouched)$('#f-slug').value=slugify($('#f-name').value)});
  $('#f-slug').addEventListener('input',()=>{slugTouched=true});$('#f-image').addEventListener('input',previewImage);
  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#editor-backdrop').hidden)closeEditor()});

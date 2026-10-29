@@ -1,3 +1,13 @@
+# Hoa Lụa Thu Hiền V1.3.9
+
+Bản nâng cấp từ V1.3.8: **Đề xuất cho bạn** tối đa 8 sản phẩm ở trang chi tiết SEO (bán chạy, đánh giá cao, từ khóa tương tự, kết hợp); hiện số bán **thực tế từ đơn đã giao** và điểm trung bình từ **đánh giá thật của người mua có đơn đã giao**.
+
+⚠️ Không tạo số lượt bán hoặc đánh giá giả. ADMIN xem, duyệt hoặc ẩn đánh giá thật; không nhập số sao tùy ý.
+
+**Thứ tự triển khai:** Backup D1 và GitHub → chạy `migrations/0007_console_copy.sql` đúng một lần trong Cloudflare D1 Console → upload toàn bộ mã nguồn V1.3.9 trên GitHub → kiểm tra Cloudflare Pages Production Success → thử đặt và chuyển đơn sang Đã giao, gửi đánh giá bằng mã đơn & SĐT và duyệt qua ADMIN.
+
+Không tạo lại D1, R2, CMS, Pixel, không đụng tới danh sách người đăng ký nhận tin. Số bán thực tế được tính từ đơn của chính website (không gồm đơn từ các kênh khác).
+
 # Hoa Lụa Thu Hiền V1.3.8
 
 **Tham khảo `HUONG_DAN_CAP_NHAT_V1_3_8.md` để chạy migration số 6 trước khi upload toàn bộ mã nguồn.**

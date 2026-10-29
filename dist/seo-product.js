@@ -72,3 +72,21 @@ button?.addEventListener('click',()=>{
   track('AddToCart',{content_ids:[button.dataset.id],content_type:'product',content_name:button.dataset.name,contents:[{id:button.dataset.id,quantity:added,item_price:p}],value:p*added,currency:'VND'});
 });
 void loadPixelConfig();
+
+// Chỉ người sở hữu đơn đã giao mới gửi được đánh giá; ADMIN duyệt trước khi hiển thị.
+document.getElementById('seo-review-form')?.addEventListener('submit',async event=>{
+ event.preventDefault();const form=event.currentTarget;
+ const submit=document.getElementById('seo-review-submit');
+ const message=document.getElementById('seo-review-status');
+ submit.disabled=true;message.textContent='Đang xác minh đơn hàng...';
+ try{
+  const response=await fetch('/api/reviews',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+   productId:button?.dataset.id,orderCode:document.getElementById('review-order').value.trim(),
+   phone:document.getElementById('review-phone').value.trim(),rating:Number(document.getElementById('review-rating').value),
+   comment:document.getElementById('review-comment').value.trim(),confirm:document.getElementById('review-confirm').checked
+  })});
+  const result=await response.json();
+  if(!response.ok||!result.ok)throw new Error(result.error||'Không gửi được đánh giá.');
+  message.textContent=result.message;form.reset();
+ }catch(e){message.textContent=e.message}finally{submit.disabled=false}
+});
